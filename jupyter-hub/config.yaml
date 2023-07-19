@@ -1,0 +1,71 @@
+# Default values to take a look https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/HEAD/jupyterhub/values.yaml
+
+# This configuration is to use specific Karpenter provisioner to test
+singleuser:
+  image:
+    name: jupyter/base-notebook
+    tag: latest
+  nodeSelector:
+    node-type: jupyter-hub
+  cpu:
+    limit: 4
+    guarantee: 2
+  memory:
+    limit: 4G
+    guarantee: 2G
+  storage:
+    type: "static"
+    static:
+      pvcName: "efs-persist"
+      subPath: "home/{username}"
+    extraVolumes:
+    - name: jupyterhub-shared
+      persistentVolumeClaim:
+        claimName: efs-persist-shared
+    extraVolumeMounts:
+    - name: jupyterhub-shared
+      mountPath: /home/shared
+      readOnly: false
+  extraEnv:
+    GRANT_SUDO: "yes"
+    NOTEBOOK_ARGS: "--allow-root"
+    CHOWN_HOME: "yes"
+    CHOWN_HOME_OPTS: "-R"
+    CHOWN_EXTRA: "/home/shared"
+  cmd: start-singleuser.sh
+  uid: 0
+  fsGid: 0
+
+scheduling:
+  userScheduler:
+    enabled: false
+  podPriority:
+    enabled: true
+  userPlaceholder:
+    enabled: true
+    replicas: 1
+  userPods:
+    nodeAffinity:
+      matchNodePurpose: prefer
+
+proxy:
+  service:
+    type: LoadBalancer
+    annotations: {}
+  chp:
+    nodeSelector:
+      node-type: jupyter-hub
+
+cull:
+  enabled: true
+  timeout: 3600
+  every: 300
+
+hub:
+  nodeSelector:
+    node-type: jupyter-hub
+
+global:
+  safeToShowValues: false
+
+

@@ -1,0 +1,68 @@
+# Ray cluster installed using Helm Charts
+image:
+  repository: rayproject/ray-ml
+  tag: "2.5.1"
+  pullPolicy: IfNotPresent
+
+head:
+  enableInTreeAutoscaling: "True"
+  resources:
+    limits:
+      cpu: "14"
+      memory: "54Gi"
+      ephemeral-storage: "700Gi"
+    requests:
+      cpu: "14"
+      memory: "54Gi"
+      ephemeral-storage: "700Gi"
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+    - name: ray-job-volume # TBD: Dont know if there is a need of this volume here
+      hostPath:
+        path: /tmp/
+  volumeMounts:
+    - mountPath: /tmp/ray
+      name: log-volume
+    - mountPath: /mnt/cluster_storage
+      name: ray-job-volume
+  tolerations:
+    - key: ray-cluster
+      effect: NoSchedule
+      operator: Exists
+  containerEnv:
+    - name: RAY_LOG_TO_STDERR
+      value: "1"
+
+worker:
+  resources:
+    limits:
+      cpu: "14"
+      memory: "54Gi"
+      ephemeral-storage: "700Gi"
+    requests:
+      cpu: "14"
+      memory: "54Gi"
+      ephemeral-storage: "700Gi"
+  tolerations:
+    - key: ray-cluster
+      effect: NoSchedule
+      operator: Exists
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+    - name: ray-job-volume
+      hostPath: # This volume is used for training jobs in the instance
+        path: /tmp/
+  # Ray writes logs to /tmp/ray/session_latests/logs
+  volumeMounts:
+    - mountPath: /tmp/ray
+      name: log-volume
+    - mountPath: /mnt/cluster_storage
+      name: ray-job-volume
+  replicas: "0"
+  minReplicas: "0"
+  maxReplicas: "9"
+  containerEnv:
+    - name: RAY_LOG_TO_STDERR
+      value: "1"

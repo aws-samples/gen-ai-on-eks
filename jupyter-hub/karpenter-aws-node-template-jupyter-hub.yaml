@@ -1,0 +1,14 @@
+---
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeTemplate
+metadata:
+  name: jupyter-hub
+spec:
+  subnetSelector:
+      karpenter.sh/discovery: fmops-cluster
+  securityGroupSelector:
+      karpenter.sh/discovery: fmops-cluster
+  tags:
+    managed-by: "karpenter"
+    intent: "apps"
+    Name: "karpenter-node"
