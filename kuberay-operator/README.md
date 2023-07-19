@@ -9,4 +9,8 @@ helm repo add kuberay https://ray-project.github.io/kuberay-helm/
 helm install kuberay-operator kuberay/kuberay-operator --namespace kuberay --version 0.5.0 --create-namespace
 ```
 
-# TBD: Spin-up kuberay operator in an specific Karpenter provisioner
+## Access Ray Dashboard locally using kubectl port-forward
+
+```bash
+kubectl --namespace=kuberay-operator port-forward service/raycluster-kuberay-head-svc 8265:8265
+```

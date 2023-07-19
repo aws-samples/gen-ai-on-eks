@@ -12,9 +12,20 @@ Diversity: The selected computation framework should be as extensible as possibl
 
 ## Pre Reqs
 - Terraform
-
-# Spin-up environment
-
-Open [terraform](terraform/) folder, change the desired variables on [vars.tf](terraform/vars.tf)
+- Spot Linked Role
 ```bash
+aws iam create-service-linked-role --aws-service-name spot.amazonaws.com
 ```
+
+## Spin-up environment
+
+Open [terraform](terraform/) folder, change the desired variables on [vars.tf](terraform/vars.tf) and execute the following command:
+
+```bash
+terraform apply --auto-approve
+```
+
+This will provision a EKS cluster with pre-installed add-ons using [Amazon EKS Blueprints](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons), it will also install Jupyterhub for development and analysis with a mounted EFS file system, kuberay-operator to managed Ray clusters using CRDs, and Apache Airflow (TBD).
+
+- [Ray Docs](./kuberay-operator/README.md)
+- [JupyterHub Docs](./jupyter-hub/README.md)

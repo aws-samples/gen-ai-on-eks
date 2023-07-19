@@ -1,4 +1,4 @@
-# Install JupyterHub
+# Install JupyterHub using HELM
 
 ## Apply Karpenter provisioner
 
