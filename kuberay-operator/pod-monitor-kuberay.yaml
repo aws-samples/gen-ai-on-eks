@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kuberay-worker
+  namespace: kube-prometheus-stack
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kuberay
+  podMetricsEndpoints:
+  - port: metrics
+  namespaceSelector:
+    any: true
