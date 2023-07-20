@@ -11,4 +11,4 @@ spec:
   tags:
     managed-by: "karpenter"
     intent: "apps"
-    Name: "karpenter-node"
+    Name: "jupyter-karpenter-node"

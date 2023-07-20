@@ -94,9 +94,15 @@ resource "kubectl_manifest" "karpenter_for_jupyter_node_template" {
   ]
 }
 
+resource "kubernetes_namespace" "jupyterhub" {
+  metadata {
+    name = "jupyterhub"
+  }
+}
+
 resource "helm_release" "jupyterhub" {
   namespace        = "jupyterhub"
-  create_namespace = true
+  create_namespace = false
   name             = "jupyterhub"
   repository       = "https://jupyterhub.github.io/helm-chart/"
   chart            = "jupyterhub"
@@ -106,7 +112,7 @@ resource "helm_release" "jupyterhub" {
 
   depends_on = [
     module.eks, module.eks_blueprints_addons, kubectl_manifest.karpenter_for_jupyter,
-    aws_efs_file_system.efs, aws_efs_mount_target.efs_mt
+    aws_efs_file_system.efs, aws_efs_mount_target.efs_mt, kubernetes_namespace.jupyterhub
   ]
 }
 
@@ -180,7 +186,7 @@ spec:
     path: "/"
 YAML
 
-  depends_on = [module.eks_blueprints_addons]
+  depends_on = [module.eks_blueprints_addons, kubernetes_namespace.jupyterhub]
 }
 
 resource "kubectl_manifest" "pvc" {
@@ -199,7 +205,7 @@ spec:
       storage: 1Gi
 YAML
 
-  depends_on = [module.eks_blueprints_addons]
+  depends_on = [module.eks_blueprints_addons, kubernetes_namespace.jupyterhub]
 }
 
 resource "kubectl_manifest" "pv_shared" {
@@ -219,7 +225,7 @@ spec:
     path: "/"
 YAML
 
-  depends_on = [module.eks_blueprints_addons]
+  depends_on = [module.eks_blueprints_addons, kubernetes_namespace.jupyterhub]
 }
 
 resource "kubectl_manifest" "pvc_shared" {
@@ -238,7 +244,7 @@ spec:
       storage: 1Gi
 YAML
 
-  depends_on = [module.eks_blueprints_addons]
+  depends_on = [module.eks_blueprints_addons, kubernetes_namespace.jupyterhub]
 }
 
 #---------------------------------------------------------------

@@ -169,6 +169,10 @@ module "eks" {
     }
   }
 
+  node_security_group_tags = {
+    "kubernetes.io/cluster/${local.name}" = null
+  }
+
   tags = merge(local.tags, {
     "karpenter.sh/discovery" = local.name
   })

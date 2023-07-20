@@ -26,6 +26,10 @@ head:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: '8080'
   tolerations:
     - key: ray-cluster
       effect: NoSchedule
@@ -44,6 +48,10 @@ worker:
       cpu: "14"
       memory: "54Gi"
       ephemeral-storage: "700Gi"
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: '8080'
   tolerations:
     - key: ray-cluster
       effect: NoSchedule

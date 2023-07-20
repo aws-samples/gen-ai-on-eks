@@ -39,7 +39,7 @@ spec:
       values: ["amd64"]
     - key: "karpenter.sh/capacity-type" # If not included, the webhook for the AWS cloud provider will default to on-demand
       operator: In
-      values: ["spot", "on-demand"]
+      values: ["on-demand"]
   limits:
     resources:
       cpu: 1000 # CPU Cores across all instances
