@@ -2,6 +2,12 @@ variable "vpc_cidr" {
   default = "10.8.0.0/16"
 }
 
+variable "db_private_subnets" {
+  description = "Private Subnets CIDRs. 254 IPs per Subnet/AZ for Airflow DB."
+  default     = ["10.8.20.0/26", "10.8.21.0/26"]
+  type        = list(string)
+}
+
 variable "name" {
   default = "fmops-cluster"
 }
@@ -38,4 +44,10 @@ variable "raycluster_karpenter_config_node_template" {
 
 variable "kuberay_cluster_values_path" {
   default = "../kuberay-operator/values.yaml"
+}
+
+# Apache Airflow needs
+
+variable "airflow_name" {
+  default = "airflow"
 }

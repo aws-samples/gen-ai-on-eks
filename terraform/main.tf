@@ -45,11 +45,6 @@ provider "kubectl" {
 }
 
 
-data "aws_ecrpublic_authorization_token" "token" {
-  provider = aws.virginia
-}
-
-
 locals {
   name   = var.name
   region = var.aws_region
@@ -69,14 +64,18 @@ locals {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 4.0"
+  version = "~> 5.0"
 
   name = local.name
   cidr = local.vpc_cidr
 
-  azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
-  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
+  azs                                = local.azs
+  private_subnets                    = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
+  public_subnets                     = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
+  
+  database_subnets                   = var.db_private_subnets
+  create_database_subnet_group       = true
+  create_database_subnet_route_table = true
 
   enable_nat_gateway = true
   single_nat_gateway = true
