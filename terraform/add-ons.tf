@@ -34,40 +34,70 @@ module "karpenter_policy" {
   )
 }
 
-module "karpenter" {
-  source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 19.15"
+# module "karpenter" {
+#   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
+#   version = "~> 19.15"
 
-  cluster_name                 = module.eks.cluster_name
-  irsa_oidc_provider_arn       = module.eks.oidc_provider_arn
-  create_irsa                  = false # IRSA will be created by the kubernetes-addons module
-  iam_role_additional_policies = [module.karpenter_policy.arn]
+#   cluster_name                 = module.eks.cluster_name
+#   irsa_oidc_provider_arn       = module.eks.oidc_provider_arn
+#   create_irsa                  = false # IRSA will be created by the kubernetes-addons module
+#   iam_role_additional_policies = [module.karpenter_policy.arn]
 
-  tags = local.tags
+#   tags = local.tags
+# }
+
+resource "aws_iam_role_policy_attachment" "karpenter_attach_policy_to_role" {
+  role       = element(split("/", module.eks_blueprints_addons.karpenter.node_iam_role_arn), 1)
+  policy_arn = module.karpenter_policy.arn
 }
+
+# # EFS CSI Missing Policy
+# resource "aws_iam_policy" "aws_efs_csi_driver_tags" {
+#   name        = "${module.eks.cluster_name}-efs-csi-tag-policy"
+#   description = "IAM Policy for AWS EFS CSI Driver Tags"
+#   policy      = data.aws_iam_policy_document.aws_efs_csi_driver_tags.json
+#   tags        = local.tags
+# }
+
+# data "aws_iam_policy_document" "aws_efs_csi_driver_tags" {
+#   statement {
+#     sid    = "AllowTagResource"
+#     effect = "Allow"
+#     resources = [
+#       aws_efs_file_system.efs.arn, aws_efs_file_system.efs_dags_airflow.arn
+#     ]
+#     actions = ["elasticfilesystem:TagResource"]
+
+#     condition {
+#       test     = "StringLike"
+#       variable = "aws:ResourceTag/efs.csi.aws.com/cluster"
+#       values   = ["true"]
+#     }
+#   }
+# }
+
 
 # Update to latest version of Blueprints
 module "eks_blueprints_addons" {
   # source  = "aws-ia/eks-blueprints-addons/aws"
   # version = "~> 1.0" #ensure to update this to the latest/desired version
-  source            = "github.com/aws-ia/terraform-aws-eks-blueprints-addons?ref=08650fd2b4bc894bde7b51313a8dc9598d82e925"
+  source            = "github.com/aws-ia/terraform-aws-eks-blueprints-addons?ref=v1.2.2"
   cluster_name      = module.eks.cluster_name
   cluster_endpoint  = module.eks.cluster_endpoint
   cluster_version   = module.eks.cluster_version
-  oidc_provider     = module.eks.oidc_provider
   oidc_provider_arn = module.eks.oidc_provider_arn
 
-  enable_aws_efs_csi_driver           = true # Will be used for Jupyter Notebooks and DAG on Apache Airflow
+  enable_aws_efs_csi_driver = true # Will be used for Jupyter Notebooks and DAG on Apache Airflow
+  # aws_efs_csi_driver_irsa_policies    = [resource.aws_iam_policy.aws_efs_csi_driver_tags.arn]
   enable_aws_load_balancer_controller = true
   enable_karpenter                    = true
-  karpenter_helm_config = {
+  karpenter = {
     repository_username = data.aws_ecrpublic_authorization_token.token.user_name
     repository_password = data.aws_ecrpublic_authorization_token.token.password
   }
-  karpenter_node_iam_instance_profile        = module.karpenter.instance_profile_name
-  karpenter_enable_spot_termination_handling = true
-  enable_metrics_server                      = true
-  enable_kube_prometheus_stack               = true
+  karpenter_enable_spot_termination = true
+  enable_metrics_server             = true
+  enable_kube_prometheus_stack      = true
 
   tags = {
     Environment = "mlops-dev"
@@ -303,6 +333,8 @@ resource "helm_release" "ray_cluster" {
 # Self-Managed Apache Airflow
 #---------------------------------------------------------------
 
+# TBD: Need to create Karpenter provisioner for AirFlow
+
 resource "random_password" "postgres" {
   length  = 16
   special = false
@@ -363,8 +395,8 @@ module "db" {
   password               = sensitive(aws_secretsmanager_secret_version.postgres.secret_string)
   port                   = 5432
 
-  multi_az               = true
-  db_subnet_group_name   = module.vpc.database_subnet_group
+  multi_az             = true
+  db_subnet_group_name = module.vpc.database_subnet_group
 
   vpc_security_group_ids = [module.security_group_rds_airflow.security_group_id]
 
@@ -467,7 +499,7 @@ module "airflow_irsa_scheduler" {
   role_name = "airflow-scheduler"
 
   role_policy_arns = merge({ AirflowScheduler = aws_iam_policy.airflow_scheduler.arn })
-  
+
 
   oidc_providers = {
     main = {
@@ -630,7 +662,108 @@ resource "aws_iam_policy" "airflow_worker" {
   policy      = data.aws_iam_policy_document.airflow_s3_logs.json
 }
 
-# TBD Create EFS File System for persist Dags
 #---------------------------------------------------------------
 # Managing DAG files with GitSync - EFS Storage Class
 #---------------------------------------------------------------
+resource "aws_efs_file_system" "efs_dags_airflow" {
+  creation_token = "efs-airflow"
+  encrypted      = true
+
+  tags = local.tags
+}
+
+resource "aws_efs_mount_target" "efs_mt_airflow" {
+  count = length(module.vpc.private_subnets)
+
+  file_system_id  = aws_efs_file_system.efs_dags_airflow.id
+  subnet_id       = element(module.vpc.private_subnets, count.index)
+  security_groups = [aws_security_group.efs_airflow.id]
+}
+
+resource "aws_security_group" "efs_airflow" {
+  name        = "${local.name}-efs-airflow"
+  description = "Allow inbound NFS traffic from private subnets of the VPC"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description = "Allow NFS 2049/tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+  }
+
+  tags = local.tags
+}
+
+# EFS Storage Class for AirFlow
+resource "kubectl_manifest" "efs_sc" {
+  yaml_body = <<-YAML
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-sc
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap
+  fileSystemId: ${aws_efs_file_system.efs_dags_airflow.id}
+  directoryPerms: "700"
+  gidRangeStart: "1000"
+  gidRangeEnd: "2000"
+YAML
+
+  depends_on = [module.eks.cluster_name]
+}
+
+resource "kubectl_manifest" "efs_pvc" {
+  yaml_body = <<-YAML
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airflowdags-pvc
+  namespace: ${kubernetes_namespace_v1.airflow.metadata[0].name}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 10Gi
+YAML
+
+  depends_on = [kubectl_manifest.efs_sc]
+}
+
+resource "helm_release" "apache_airflow" {
+  namespace        = kubernetes_namespace_v1.airflow.metadata[0].name
+  create_namespace = false
+  name             = "airflow"
+  repository       = "https://airflow.apache.org"
+  chart            = "airflow"
+  version          = "1.9.0"
+  wait             = false # This parameter is used for complete DB migrations to DB
+  # values = ["${file("${var.kuberay_cluster_values_path}")}"]
+  values = [templatefile(var.apache_airflow_values_path, {
+    airflow_version       = "2.6.3"
+    airflow_db_user       = var.airflow_name
+    airflow_db_pass       = try(sensitive(aws_secretsmanager_secret_version.postgres.secret_string), "")
+    airflow_db_host       = try(element(split(":", module.db.db_instance_endpoint), 0), "")
+    airflow_db_name       = try(module.db.db_instance_name, "")
+    webserver_secret_name = "airflow-webserver-secret-key"
+
+    airflow_workers_service_account_name   = kubernetes_service_account_v1.airflow_worker.metadata[0].name
+    airflow_scheduler_service_account_name = kubernetes_service_account_v1.airflow_scheduler.metadata[0].name
+    webserver_service_account_name         = kubernetes_service_account_v1.airflow_webserver.metadata[0].name
+    s3_bucket_name                         = try(module.airflow_s3_bucket.s3_bucket_id, "")
+    efs_pvc                                = "airflowdags-pvc"
+  })]
+
+  depends_on = [
+    module.eks, module.db, kubernetes_namespace_v1.airflow, module.airflow_s3_bucket,
+    aws_iam_policy.airflow_scheduler, aws_iam_policy.airflow_webserver, aws_iam_policy.airflow_worker,
+    kubectl_manifest.airflow_webserver, module.airflow_irsa_scheduler, module.airflow_irsa_webserver,
+    module.airflow_irsa_worker, aws_efs_file_system.efs_dags_airflow, aws_efs_mount_target.efs_mt_airflow
+  ]
+}
+
+

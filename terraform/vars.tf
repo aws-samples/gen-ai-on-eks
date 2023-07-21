@@ -4,7 +4,7 @@ variable "vpc_cidr" {
 
 variable "db_private_subnets" {
   description = "Private Subnets CIDRs. 254 IPs per Subnet/AZ for Airflow DB."
-  default     = ["10.8.20.0/26", "10.8.21.0/26"]
+  default     = ["10.8.51.0/26", "10.8.52.0/26"]
   type        = list(string)
 }
 
@@ -50,4 +50,8 @@ variable "kuberay_cluster_values_path" {
 
 variable "airflow_name" {
   default = "airflow"
+}
+
+variable "apache_airflow_values_path" {
+  default = "../apache-airflow/values.yaml"
 }

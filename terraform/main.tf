@@ -69,10 +69,10 @@ module "vpc" {
   name = local.name
   cidr = local.vpc_cidr
 
-  azs                                = local.azs
-  private_subnets                    = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
-  public_subnets                     = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
-  
+  azs             = local.azs
+  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
+  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
+
   database_subnets                   = var.db_private_subnets
   create_database_subnet_group       = true
   create_database_subnet_route_table = true
@@ -133,7 +133,7 @@ module "eks" {
   aws_auth_roles = [
     # We need to add in the Karpenter node IAM role for nodes launched by Karpenter
     {
-      rolearn  = module.karpenter.role_arn
+      rolearn  = module.eks_blueprints_addons.karpenter.node_iam_role_arn
       username = "system:node:{{EC2PrivateDNSName}}"
       groups = [
         "system:bootstrappers",

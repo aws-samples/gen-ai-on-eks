@@ -32,7 +32,7 @@ ingress:
   # Configs for the Ingress of the web Service
   web:
     # Enable web ingress resource
-    enabled: false
+    enabled: true
 
     # Annotations for the web Ingress
     annotations:
@@ -333,7 +333,7 @@ webserver:
     scheme: HTTP
   serviceAccount:
     create: false
-    name: ${webserver_scheduler_service_account_name}
+    name: ${webserver_service_account_name}
   readinessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 30
@@ -526,8 +526,9 @@ dags:
     ## the name of an existing PVC to use
     existingClaim: ${efs_pvc}
 
+  # Need to enable GitSync once I have my ssh-key
   gitSync:
-    enabled: true
+    enabled: false
 
     # git repo clone url
     #repo: git@github.com:Hyper-Mesh/airflow-dags.git
