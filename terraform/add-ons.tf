@@ -34,53 +34,12 @@ module "karpenter_policy" {
   )
 }
 
-# module "karpenter" {
-#   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-#   version = "~> 19.15"
-
-#   cluster_name                 = module.eks.cluster_name
-#   irsa_oidc_provider_arn       = module.eks.oidc_provider_arn
-#   create_irsa                  = false # IRSA will be created by the kubernetes-addons module
-#   iam_role_additional_policies = [module.karpenter_policy.arn]
-
-#   tags = local.tags
-# }
-
 resource "aws_iam_role_policy_attachment" "karpenter_attach_policy_to_role" {
   role       = element(split("/", module.eks_blueprints_addons.karpenter.node_iam_role_arn), 1)
   policy_arn = module.karpenter_policy.arn
 }
 
-# # EFS CSI Missing Policy
-# resource "aws_iam_policy" "aws_efs_csi_driver_tags" {
-#   name        = "${module.eks.cluster_name}-efs-csi-tag-policy"
-#   description = "IAM Policy for AWS EFS CSI Driver Tags"
-#   policy      = data.aws_iam_policy_document.aws_efs_csi_driver_tags.json
-#   tags        = local.tags
-# }
-
-# data "aws_iam_policy_document" "aws_efs_csi_driver_tags" {
-#   statement {
-#     sid    = "AllowTagResource"
-#     effect = "Allow"
-#     resources = [
-#       aws_efs_file_system.efs.arn, aws_efs_file_system.efs_dags_airflow.arn
-#     ]
-#     actions = ["elasticfilesystem:TagResource"]
-
-#     condition {
-#       test     = "StringLike"
-#       variable = "aws:ResourceTag/efs.csi.aws.com/cluster"
-#       values   = ["true"]
-#     }
-#   }
-# }
-
-
-# Update to latest version of Blueprints
 module "eks_blueprints_addons" {
-  # source  = "aws-ia/eks-blueprints-addons/aws"
-  # version = "~> 1.0" #ensure to update this to the latest/desired version
   source            = "github.com/aws-ia/terraform-aws-eks-blueprints-addons?ref=v1.2.2"
   cluster_name      = module.eks.cluster_name
   cluster_endpoint  = module.eks.cluster_endpoint
@@ -164,10 +123,7 @@ YAML
   depends_on = [module.eks_blueprints_addons]
 }
 
-#---------------------------------------------------------------
-# EFS Filesystem for private volumes per user
-# This will be repalced with Dynamic EFS provision using EFS CSI Driver
-#---------------------------------------------------------------
+# EFS for script persistance from JupyterHub
 resource "aws_efs_file_system" "efs" {
   creation_token = "efs"
   encrypted      = true
@@ -332,9 +288,6 @@ resource "helm_release" "ray_cluster" {
 #---------------------------------------------------------------
 # Self-Managed Apache Airflow
 #---------------------------------------------------------------
-
-# TBD: Need to create Karpenter provisioner for AirFlow
-
 resource "random_password" "postgres" {
   length  = 16
   special = false
