@@ -2,9 +2,15 @@
 
 # This configuration is to use specific Karpenter provisioner to test
 singleuser:
+  # profileList: # Enable GPU accelerator for every user
+  #   - display_name: "GPU Server"
+  #     description: "Spawns a notebook server with access to a GPU"
+  #     kubespawner_override:
+  #       extra_resource_limits:
+  #         nvidia.com/gpu: "1"
   image:
-    name: jupyter/base-notebook
-    tag: latest
+    name: public.ecr.aws/t9v6l2p3/jupyter-hub-test-fmops # Notebook image can change depending on what do you want to be already installed
+    tag: "1"
   nodeSelector:
     node-type: jupyter-hub
   cpu:
@@ -26,6 +32,11 @@ singleuser:
     - name: jupyterhub-shared
       mountPath: /home/shared
       readOnly: false
+  serviceAccountName: jupyterhub-single-user
+  allowPrivilegeEscalation: true
+  extraPodConfig:
+    securityContext:
+        fsGroup: 100 # Same Group as user Jovyan that ins responsible for notebook process, it is needed to use IRSA
   extraEnv:
     GRANT_SUDO: "yes"
     NOTEBOOK_ARGS: "--allow-root"
@@ -62,6 +73,10 @@ cull:
   every: 300
 
 hub:
+  # config:
+  #   KubeSpawner:
+  #     pod_security_context:
+  #       fsGroup: 65534
   nodeSelector:
     node-type: jupyter-hub
 

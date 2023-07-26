@@ -8,6 +8,12 @@ spec:
       karpenter.sh/discovery: fmops-cluster
   securityGroupSelector:
       karpenter.sh/discovery: fmops-cluster
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 100Gi
+        volumeType: gp3
+        encrypted: true
   tags:
     managed-by: "karpenter"
     intent: "apps"
