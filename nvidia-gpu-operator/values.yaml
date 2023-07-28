@@ -1,0 +1,34 @@
+operator:
+  defaultRuntime: containerd
+driver:
+  enabled: true
+mig:
+  strategy: mixed
+devicePlugin:
+  enabled: true
+  version: v0.13.0
+  config:
+    name: time-slicing-config-all
+    default: any
+    create: true
+    data:
+      any: |-
+        version: v1
+        flags:
+          migStrategy: none
+        sharing:
+          timeSlicing:
+            resources:
+            - name: nvidia.com/gpu
+              replicas: 4
+migManager:
+  enabled: true
+  env:
+    - name: WITH_REBOOT
+      value: "true"
+  default: 'all-balanced'
+toolkit:
+  version: v1.13.1-centos7
+gfd:
+  version: v0.8.0
+  
