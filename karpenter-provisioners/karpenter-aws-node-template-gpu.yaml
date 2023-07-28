@@ -2,7 +2,7 @@
 apiVersion: karpenter.k8s.aws/v1alpha1
 kind: AWSNodeTemplate
 metadata:
-  name: jupyter-hub
+  name: gpu
 spec:
   subnetSelector:
       karpenter.sh/discovery: fmops-cluster

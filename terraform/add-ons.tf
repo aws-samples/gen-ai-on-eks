@@ -50,17 +50,45 @@ module "eks_blueprints_addons" {
   # aws_efs_csi_driver_irsa_policies    = [resource.aws_iam_policy.aws_efs_csi_driver_tags.arn]
   enable_aws_load_balancer_controller = true
   enable_karpenter                    = true
-  karpenter = {
-    repository_username = data.aws_ecrpublic_authorization_token.token.user_name
-    repository_password = data.aws_ecrpublic_authorization_token.token.password
-  }
+  # karpenter = {
+  #   repository_username = data.aws_ecrpublic_authorization_token.token.user_name
+  #   repository_password = data.aws_ecrpublic_authorization_token.token.password
+  # }
   karpenter_enable_spot_termination = true
   enable_metrics_server             = true
   enable_kube_prometheus_stack      = true
 
+  helm_releases = {
+    gpu-operator = {
+      description      = "A Helm chart for NVIDIA GPU operator"
+      namespace        = "gpu-operator"
+      create_namespace = true
+      chart            = "gpu-operator"
+      chart_version    = "v23.3.2"
+      repository       = "https://helm.ngc.nvidia.com/nvidia"
+      values           = ["${file("${var.nvidia_gpu_values_path}")}"]
+    }
+  }
+
   tags = {
     Environment = "mlops-dev"
   }
+}
+
+resource "kubectl_manifest" "karpenter_default" {
+  yaml_body = file("${var.karpenter_default_provisioner}")
+
+  depends_on = [
+    module.eks, module.eks_blueprints_addons.karpenter
+  ]
+}
+
+resource "kubectl_manifest" "karpenter_default_node_template" {
+  yaml_body = file("${var.karpenter_default_node_template}")
+
+  depends_on = [
+    module.eks, module.eks_blueprints_addons.karpenter
+  ]
 }
 
 

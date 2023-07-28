@@ -2,23 +2,28 @@
 
 # This configuration is to use specific Karpenter provisioner to test
 singleuser:
-  # profileList: # Enable GPU accelerator for every user
-  #   - display_name: "GPU Server"
-  #     description: "Spawns a notebook server with access to a GPU"
-  #     kubespawner_override:
-  #       extra_resource_limits:
-  #         nvidia.com/gpu: "1"
+  profileList: # Enable GPU accelerator for every user
+    - display_name: "GPU Server"
+      description: "Spawns a notebook server with access to a GPU"
+      kubespawner_override:
+        extra_resource_limits:
+          nvidia.com/gpu: "1" # Use a slice of GPU using time-slicing mode
+          # nvidia.com/mig-1g.5gb: 1 # Use partition using MIG instead of single GPU
   image:
     name: public.ecr.aws/t9v6l2p3/jupyter-hub-test-fmops # Notebook image can change depending on what do you want to be already installed
     tag: "1"
   nodeSelector:
-    node-type: jupyter-hub
+    karpenter.sh/provisioner-name: gpu
+  extraTolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
   cpu:
-    limit: 4
+    limit: 2
     guarantee: 2
   memory:
     limit: 4G
-    guarantee: 2G
+    guarantee: 4G
   storage:
     type: "static"
     static:
@@ -53,7 +58,7 @@ scheduling:
   podPriority:
     enabled: true
   userPlaceholder:
-    enabled: true
+    enabled: false
     replicas: 1
   userPods:
     nodeAffinity:
@@ -63,9 +68,9 @@ proxy:
   service:
     type: LoadBalancer
     annotations: {}
-  chp:
-    nodeSelector:
-      node-type: jupyter-hub
+  # chp:
+  #   nodeSelector:
+  #     node-type: jupyter-hub
 
 cull:
   enabled: true
@@ -78,7 +83,18 @@ hub:
   #     pod_security_context:
   #       fsGroup: 65534
   nodeSelector:
-    node-type: jupyter-hub
+    karpenter.sh/provisioner-name: default
+  # tolerations:
+  # - key: "nvidia.com/gpu"
+  #   operator: "Exists"
+  #   effect: "NoSchedule"
+
+prePuller:
+  hook:
+    enabled: false
+  continuous:
+    # NOTE: if used with Karpenter, also add user-placeholders
+    enabled: false
 
 global:
   safeToShowValues: false

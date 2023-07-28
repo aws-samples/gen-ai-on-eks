@@ -13,21 +13,31 @@ variable "name" {
 }
 
 variable "aws_region" {
-  default = "us-east-1"
+  default = "us-west-2"
 }
 
 variable "cluster_version" {
   default = "1.27"
 }
 
+# Karpenter provisioner default
+
+variable "karpenter_default_provisioner" {
+  default = "../karpenter-provisioners/default-karpenter-provisioner.yaml"
+}
+
+variable "karpenter_default_node_template" {
+  default = "../karpenter-provisioners/default-karpenter-node-template.yaml"
+}
+
 # Helm values to apply when deploying JupyterHub Helm Chart
 
 variable "jupyter_karpenter_config" {
-  default = "../jupyter-hub/karpenter-provisioner-jupyter-hub.yaml"
+  default = "../karpenter-provisioners/karpenter-provisioner-gpu.yaml"
 }
 
 variable "jupyter_karpenter_config_node_template" {
-  default = "../jupyter-hub/karpenter-aws-node-template-jupyter-hub.yaml"
+  default = "../karpenter-provisioners/karpenter-aws-node-template-gpu.yaml"
 }
 
 variable "jupyter_hub_values_path" {
@@ -44,6 +54,12 @@ variable "raycluster_karpenter_config_node_template" {
 
 variable "kuberay_cluster_values_path" {
   default = "../kuberay-operator/values.yaml"
+}
+
+# NVIDIA Operator
+
+variable "nvidia_gpu_values_path" {
+  default = "../nvidia-gpu-operator/values.yaml"
 }
 
 # Apache Airflow needs

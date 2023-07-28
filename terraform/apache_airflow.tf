@@ -46,7 +46,7 @@ module "db" {
   identifier = var.airflow_name
 
   engine               = "postgres"
-  # engine_version       = "14.3"
+  engine_version       = "14.7"
   family               = "postgres14"
   major_engine_version = "14"
   instance_class       = "db.m6i.xlarge"
