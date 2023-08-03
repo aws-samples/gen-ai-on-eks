@@ -2,50 +2,56 @@
 apiVersion: karpenter.sh/v1alpha5
 kind: Provisioner
 metadata:
-  name: kuberay
+  name: default
 spec:
   # Wich AWS Node Template to pick
   providerRef:
-    name: kuberay
+    name: default
 
-  ttlSecondsAfterEmpty: 30
-
-  # Labels are arbitrary key-values that are applied to all nodes
-  labels:
-    node-type: kuberay
-  
-  taints:
-    - key: ray-cluster
-      effect: NoSchedule
+  # ttlSecondsAfterEmpty: 30
 
   # Requirements that constrain the parameters of provisioned nodes.
   # These requirements are combined with pod.spec.affinity.nodeAffinity rules.
   # Operators { In, NotIn } are supported to enable including or excluding values
-  requirements: # Will let karpenter define the best node based on the use case
+  requirements:
     # - key: "karpenter.k8s.aws/instance-category"
     #   operator: In
     #   values: ["c", "m", "r"]
-    # - key: "karpenter.k8s.aws/instance-cpu"
-    #   operator: In
-    #   values: ["4", "8", "16", "32"]
-    # - key: "karpenter.k8s.aws/instance-hypervisor"
-    #   operator: In
-    #   values: ["nitro"]
-    # - key: karpenter.k8s.aws/instance-generation
-    #   operator: Gt
-    #   values: ["2"]
+    - key: "karpenter.k8s.aws/instance-size"
+      operator: In
+      values: [ "large", "xlarge", "2xlarge", "4xlarge", "8xlarge", "16xlarge" ]
     - key: "kubernetes.io/arch"
       operator: In
       values: ["amd64"]
     - key: "karpenter.sh/capacity-type" # If not included, the webhook for the AWS cloud provider will default to on-demand
       operator: In
-      values: ["on-demand"]
+      values: ["on-demand", "spot"]
   limits:
     resources:
       cpu: 1000 # CPU Cores across all instances
-      memory: 2000Gi
+      memory: 20000Gi
     
   # Enables consolidation which attempts to reduce cluster cost by both removing un-needed nodes and down-sizing those
   # that can't be removed.  Mutually exclusive with the ttlSecondsAfterEmpty parameter.
   consolidation:
-    enabled: false
+    enabled: true
+---
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeTemplate
+metadata:
+  name: default
+spec:
+  subnetSelector:
+      karpenter.sh/discovery: fmops-cluster
+  securityGroupSelector:
+      karpenter.sh/discovery: fmops-cluster
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 1000Gi
+        volumeType: gp3
+        encrypted: true
+  tags:
+    managed-by: "karpenter"
+    intent: "apps"
+    Name: "karpenter-node-default"

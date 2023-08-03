@@ -1,20 +1,20 @@
 # Ray cluster installed using Helm Charts
 image:
   repository: rayproject/ray-ml
-  tag: "2.5.1"
+  tag: "latest-gpu"
   pullPolicy: IfNotPresent
 
 head:
   enableInTreeAutoscaling: "True"
   resources:
     limits:
-      cpu: "14"
-      memory: "54Gi"
-      ephemeral-storage: "700Gi"
+      cpu: "4"
+      memory: "16Gi"
+      ephemeral-storage: "200Gi"
     requests:
-      cpu: "14"
-      memory: "54Gi"
-      ephemeral-storage: "700Gi"
+      cpu: "2"
+      memory: "8Gi"
+      ephemeral-storage: "200Gi"
   volumes:
     - name: log-volume
       emptyDir: {}
@@ -30,10 +30,7 @@ head:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
-  tolerations:
-    - key: ray-cluster
-      effect: NoSchedule
-      operator: Exists
+  command: ["git clone https://github.com/lusoal/finetune-gpt2-ray-test && pip install -r finetune-gpt2-ray-test/requirements.txt"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
@@ -41,21 +38,23 @@ head:
 worker:
   resources:
     limits:
-      cpu: "14"
-      memory: "54Gi"
-      ephemeral-storage: "700Gi"
+      nvidia.com/gpu: 1
+      cpu: "12"
+      memory: "20Gi"
+      ephemeral-storage: "200Gi"
     requests:
-      cpu: "14"
-      memory: "54Gi"
-      ephemeral-storage: "700Gi"
+      nvidia.com/gpu: 1
+      cpu: "8"
+      memory: "16Gi"
+      ephemeral-storage: "200Gi"
   annotations:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
   tolerations:
-    - key: ray-cluster
-      effect: NoSchedule
-      operator: Exists
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
   volumes:
     - name: log-volume
       emptyDir: {}
@@ -68,9 +67,10 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "0"
-  minReplicas: "0"
-  maxReplicas: "9"
+  replicas: "4"
+  minReplicas: "4"
+  maxReplicas: "10"
+  command: ["git clone https://github.com/lusoal/finetune-gpt2-ray-test && pip install -r finetune-gpt2-ray-test/requirements.txt"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"

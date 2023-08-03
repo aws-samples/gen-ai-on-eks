@@ -1,23 +1,6 @@
 #---------------------------------------------------------------
 # Jupyterhub Stack
 #---------------------------------------------------------------
-
-resource "kubectl_manifest" "karpenter_for_jupyter" {
-  yaml_body = file("${var.jupyter_karpenter_config}")
-
-  depends_on = [
-    module.eks, module.eks_blueprints_addons
-  ]
-}
-
-resource "kubectl_manifest" "karpenter_for_jupyter_node_template" {
-  yaml_body = file("${var.jupyter_karpenter_config_node_template}")
-
-  depends_on = [
-    module.eks, module.eks_blueprints_addons
-  ]
-}
-
 resource "kubernetes_namespace" "jupyterhub" {
   metadata {
     name = "jupyterhub"
@@ -66,21 +49,23 @@ resource "kubernetes_secret_v1" "jupyterhub_single_user" {
   type = "kubernetes.io/service-account-token"
 }
 
-resource "helm_release" "jupyterhub" {
-  namespace        = "jupyterhub"
-  create_namespace = false
-  name             = "jupyterhub"
-  repository       = "https://jupyterhub.github.io/helm-chart/"
-  chart            = "jupyterhub"
-  version          = "2.0.0"
+# resource "helm_release" "jupyterhub" {
+#   namespace        = "jupyterhub"
+#   create_namespace = false
+#   name             = "jupyterhub"
+#   repository       = "https://jupyterhub.github.io/helm-chart/"
+#   chart            = "jupyterhub"
+#   version          = "2.0.0"
 
-  values = ["${file("${var.jupyter_hub_values_path}")}"]
+#   values = [templatefile("${path.module}/jupyter-hub/values.yaml", {
+#       jupyter_single_user_sa_name = kubernetes_service_account_v1.jupyterhub_single_user_sa.metadata[0].name
+#     })]
 
-  depends_on = [
-    module.eks, module.eks_blueprints_addons, kubectl_manifest.karpenter_for_jupyter,
-    aws_efs_file_system.efs, aws_efs_mount_target.efs_mt, kubernetes_namespace.jupyterhub
-  ]
-}
+#   depends_on = [
+#     module.eks, module.eks_blueprints_addons, kubectl_manifest.karpenter_provisioner,
+#     aws_efs_file_system.efs, aws_efs_mount_target.efs_mt, kubernetes_namespace.jupyterhub
+#   ]
+# }
 
 resource "kubectl_manifest" "storage_class_gp3" {
   yaml_body = <<YAML

@@ -1,7 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-deployment
+  name: inflate-gpu-instance
+  namespace: jupyterhub
 spec:
   replicas: 1
   selector:
@@ -13,11 +14,11 @@ spec:
         app: nginx
     spec:
       nodeSelector:
-        node-type: kuberay   # This is the nodeSelector
+        karpenter.sh/provisioner-name: gpu   # This is the nodeSelector
       tolerations:   # To tolerate the taint on the nodes
-      - key: ray-cluster
-        operator: "Exists"
-        effect: NoSchedule
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
       containers:
       - name: nginx
         image: nginx
