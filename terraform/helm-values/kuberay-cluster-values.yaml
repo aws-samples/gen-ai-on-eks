@@ -8,8 +8,8 @@ head:
   enableInTreeAutoscaling: "True"
   resources:
     limits:
-      cpu: "4"
-      memory: "16Gi"
+      cpu: "2"
+      memory: "8Gi"
       ephemeral-storage: "200Gi"
     requests:
       cpu: "2"
@@ -67,10 +67,10 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "4"
-  minReplicas: "4"
-  maxReplicas: "10"
-  command: ["git clone https://github.com/lusoal/finetune-gpt2-ray-test && pip install -r finetune-gpt2-ray-test/requirements.txt"]
+  replicas: "2"
+  minReplicas: "2"
+  maxReplicas: "2"
+  command: ["git clone https://github.com/lusoal/finetune-gpt2-ray-test && pip install -r finetune-gpt2-ray-test/requirements.txt"] # This is used to install the required dependencies in Ray worker container image
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"

@@ -1,3 +1,4 @@
+# This script runs inside Ray Worker Nodes for distributed trainning.
 
 import ray
 import argparse
