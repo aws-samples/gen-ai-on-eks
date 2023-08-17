@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
     # Get DeepSpeed config
     if not args.no_deepspeed:
-        with open("../config/deepspeed.json","r") as fp:
+        with open("./deepspeed.json","r") as fp:
             deepspeed = json.load(fp)
 
     # Init Ray cluster

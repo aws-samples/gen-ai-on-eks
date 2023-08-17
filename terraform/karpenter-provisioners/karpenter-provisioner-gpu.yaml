@@ -11,7 +11,7 @@ spec:
   requirements:
     - key: "karpenter.sh/capacity-type"
       operator: In
-      values: [ "spot", "on-demand" ]
+      values: [ "on-demand" ]
     - key: "karpenter.k8s.aws/instance-family"
       operator: In
       values: ["g5"]
