@@ -109,28 +109,28 @@ module "eks_blueprints_addons" {
       repository       = "https://ray-project.github.io/kuberay-helm/"
       values           = ["${file("${var.kuberay_cluster_values_path}")}"]
     }
-    # apache-airflow = {
-    #   description      = "A Helm chart for Apache Airflow"
-    #   namespace        = "airflow"
-    #   create_namespace = false
-    #   chart            = "airflow"
-    #   chart_version    = "1.9.0"
-    #   repository       = "https://airflow.apache.org"
-    #   values = [templatefile(var.apache_airflow_values_path, {
-    #     airflow_version       = "2.6.3"
-    #     airflow_db_user       = var.airflow_name
-    #     airflow_db_pass       = try(sensitive(aws_secretsmanager_secret_version.postgres.secret_string), "")
-    #     airflow_db_host       = try(element(split(":", module.db.db_instance_endpoint), 0), "")
-    #     airflow_db_name       = try(module.db.db_instance_name, "")
-    #     webserver_secret_name = "airflow-webserver-secret-key"
+    apache-airflow = {
+      description      = "A Helm chart for Apache Airflow"
+      namespace        = kubernetes_namespace_v1.airflow.metadata[0].name
+      create_namespace = false
+      chart            = "airflow"
+      chart_version    = "1.9.0"
+      repository       = "https://airflow.apache.org"
+      values = [templatefile(var.apache_airflow_values_path, {
+        airflow_version       = "2.6.3"
+        airflow_db_user       = var.airflow_name
+        airflow_db_pass       = try(sensitive(aws_secretsmanager_secret_version.postgres.secret_string), "")
+        airflow_db_host       = try(element(split(":", module.db.db_instance_endpoint), 0), "")
+        airflow_db_name       = try(module.db.db_instance_name, "")
+        webserver_secret_name = "airflow-webserver-secret-key"
 
-    #     airflow_workers_service_account_name   = kubernetes_service_account_v1.airflow_worker.metadata[0].name
-    #     airflow_scheduler_service_account_name = kubernetes_service_account_v1.airflow_scheduler.metadata[0].name
-    #     webserver_service_account_name         = kubernetes_service_account_v1.airflow_webserver.metadata[0].name
-    #     s3_bucket_name                         = try(module.airflow_s3_bucket.s3_bucket_id, "")
-    #     efs_pvc                                = "airflowdags-pvc"
-    #   })]
-    # }
+        airflow_workers_service_account_name   = kubernetes_service_account_v1.airflow_worker.metadata[0].name
+        airflow_scheduler_service_account_name = kubernetes_service_account_v1.airflow_scheduler.metadata[0].name
+        webserver_service_account_name         = kubernetes_service_account_v1.airflow_webserver.metadata[0].name
+        s3_bucket_name                         = try(module.airflow_s3_bucket.s3_bucket_id, "")
+        efs_pvc                                = "airflowdags-pvc"
+      })]
+    }
   }
 
   tags = {

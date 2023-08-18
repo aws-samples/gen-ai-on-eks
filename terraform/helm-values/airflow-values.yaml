@@ -1,7 +1,9 @@
 ########################################
 ## CONFIG | Airflow Configs
 ########################################
-
+airflow:
+  extraPipPackages:
+    - "ray"
 # Default security context for airflow (deprecated, use `securityContexts` instead)
 securityContext:
   fsGroup: 65534
@@ -528,12 +530,13 @@ dags:
 
   # Need to enable GitSync once I have my ssh-key
   gitSync:
-    enabled: false
+    enabled: true
 
     # git repo clone url
     #repo: git@github.com:Hyper-Mesh/airflow-dags.git
-    repo: git@github.com:jagpk/sample-airflow-dags.git
-    branch: main
+    repo: git@github.com:lusoal/fm-ops-eks.git
+    branch: dags
+    subPath: "terraform/examples/dags"
     rev: HEAD
     depth: 1
 
@@ -541,7 +544,6 @@ dags:
     maxFailures: 5
     # subpath wihin the repo where dags are located
     # should be "" if dags are at repo root
-    subPath: "dags"
 
     # If you are using an ssh clone url, you can specify the name of the secret below
     sshKeySecret: airflow-ssh-secret

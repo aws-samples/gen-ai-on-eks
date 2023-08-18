@@ -30,7 +30,7 @@ head:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
-  command: ["git clone https://github.com/lusoal/finetune-gpt2-ray-test && pip install -r finetune-gpt2-ray-test/requirements.txt"]
+  command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
@@ -70,7 +70,7 @@ worker:
   replicas: "4"
   minReplicas: "4"
   maxReplicas: "10"
-  command: ["git clone https://github.com/lusoal/finetune-gpt2-ray-test && pip install -r finetune-gpt2-ray-test/requirements.txt"] # This is used to install the required dependencies in Ray worker container image
+  command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"] # This is used to install the required dependencies in Ray worker container image
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
