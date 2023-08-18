@@ -1,3 +1,11 @@
+terraform {
+  backend "s3" {
+    bucket = "fm-ops-tf-state-shagsahjs" # Replace during install.sh
+    key    = "fm-ops-demo/fm-ops-demo.json"
+    region = "us-west-2" # Replace during install.sh
+  }
+}
+
 provider "aws" {
   region = "us-west-2"
 }
