@@ -1,13 +1,9 @@
-import logging
-from airflow.hooks.S3_hook import S3Hook
-
-
-def train(**kwargs):
+def train(bucket, prefix):
+    import logging
+    from airflow.hooks.S3_hook import S3Hook
     from ray.job_submission import JobSubmissionClient
 
     s3_hook = S3Hook(aws_conn_id="s3_connection")
-    bucket = kwargs["bucket"]
-    prefix = kwargs["prefix"]
 
     keys = s3_hook.list_keys(bucket, prefix=prefix)
 
