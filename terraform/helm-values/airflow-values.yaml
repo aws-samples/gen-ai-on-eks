@@ -42,7 +42,7 @@ ingress:
       alb.ingress.kubernetes.io/target-type: instance
       alb.ingress.kubernetes.io/scheme: internet-facing
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
-      alb.ingress.kubernetes.io/healthcheck-path: '/health'
+      alb.ingress.kubernetes.io/healthcheck-path: "/health"
       # Enable the following if you have public/internal domain e.g., https://mycompany.com/
       # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
       # alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:....................."
@@ -151,29 +151,29 @@ workers:
   #  enabled: false
   #  namespaceLabels: {}
 
-    # How often KEDA polls the airflow DB to report new scale requests to the HPA
+  # How often KEDA polls the airflow DB to report new scale requests to the HPA
   #  pollingInterval: 5
 
-    # How many seconds KEDA will wait before scaling to zero.
-    # Note that HPA has a separate cooldown period for scale-downs
+  # How many seconds KEDA will wait before scaling to zero.
+  # Note that HPA has a separate cooldown period for scale-downs
   #  cooldownPeriod: 30
 
-    # Minimum number of workers created by keda
+  # Minimum number of workers created by keda
   #  minReplicaCount: 0
 
-    # Maximum number of workers created by keda
+  # Maximum number of workers created by keda
   #  maxReplicaCount: 10
 
   # Specify HPA related options
   #  advanced: {}
-    # horizontalPodAutoscalerConfig:
-    #   behavior:
-    #     scaleDown:
-    #       stabilizationWindowSeconds: 300
-    #       policies:
-    #         - type: Percent
-    #           value: 100
-    #           periodSeconds: 15
+  # horizontalPodAutoscalerConfig:
+  #   behavior:
+  #     scaleDown:
+  #       stabilizationWindowSeconds: 300
+  #       policies:
+  #         - type: Percent
+  #           value: 100
+  #           periodSeconds: 15
 
   persistence:
     # Enable persistent volumes
@@ -198,15 +198,15 @@ workers:
 #  nodeSelector: {}
 #  priorityClassName: ~
 #  affinity: {}
-  # default worker affinity is:
-  #  podAntiAffinity:
-  #    preferredDuringSchedulingIgnoredDuringExecution:
-  #    - podAffinityTerm:
-  #        labelSelector:
-  #          matchLabels:
-  #            component: worker
-  #        topologyKey: kubernetes.io/hostname
-  #      weight: 100
+# default worker affinity is:
+#  podAntiAffinity:
+#    preferredDuringSchedulingIgnoredDuringExecution:
+#    - podAffinityTerm:
+#        labelSelector:
+#          matchLabels:
+#            component: worker
+#        topologyKey: kubernetes.io/hostname
+#      weight: 100
 #  tolerations: []
 #  topologySpreadConstraints: []
 
@@ -242,20 +242,19 @@ scheduler:
 
   resources:
     limits:
-     cpu: 500m
-     memory: 1024Mi
+      cpu: 500m
+      memory: 1024Mi
     requests:
-     cpu: 500m
-     memory: 1024Mi
+      cpu: 500m
+      memory: 1024Mi
 
   # This setting tells kubernetes that its ok to evict
   # when it wants to scale a node down.
   safeToEvict: false
 
-
   # Select certain nodes for airflow scheduler pods.
-#  nodeSelector: {}
-#  affinity: {}
+  #  nodeSelector: {}
+  #  affinity: {}
   # default scheduler affinity is:
   #  podAntiAffinity:
   #    preferredDuringSchedulingIgnoredDuringExecution:
@@ -265,10 +264,10 @@ scheduler:
   #            component: scheduler
   #        topologyKey: kubernetes.io/hostname
   #      weight: 100
-#  tolerations: []
-#  topologySpreadConstraints: []
+  #  tolerations: []
+  #  topologySpreadConstraints: []
 
-#extraVolumes is required for DAG GitSync #https://github.com/apache/airflow/issues/27476
+  #extraVolumes is required for DAG GitSync #https://github.com/apache/airflow/issues/27476
   extraVolumes:
     - name: git-sync-ssh-key
       secret:
@@ -302,7 +301,6 @@ createUserJob:
     - "-p"
     - "{{ .Values.webserver.defaultUser.password }}"
 
-
 ###################################
 # Airflow database migration job settings
 ###################################
@@ -320,7 +318,6 @@ migrateDatabaseJob:
     - |-
       exec \
       airflow {{ semverCompare ">=2.0.0" .Values.airflowVersion | ternary "db upgrade" "upgradedb" }}
-
 
 ###################################
 # Airflow webserver settings
@@ -423,7 +420,6 @@ statsd:
       cpu: 200m
       memory: 256Mi
 
-
 ###################################
 # PgBouncer settings
 ###################################
@@ -462,28 +458,28 @@ config:
   core:
     dags_folder: '{{ include "airflow_dags" . }}'
     # This is ignored when used with the official Docker image
-    load_examples: 'True'
-    executor: '{{ .Values.executor }}'
-    remote_logging: 'True'
+    load_examples: "True"
+    executor: "{{ .Values.executor }}"
+    remote_logging: "True"
   logging:
-    remote_logging: 'True'
-    logging_level: 'INFO'
-    colored_console_log: 'True'
+    remote_logging: "True"
+    logging_level: "INFO"
+    colored_console_log: "True"
     remote_base_log_folder: "s3://${s3_bucket_name}/airflow-logs"
     # aws_s3_conn is the name of the connection that needs to be created using Airflow admin UI once the deployment is complete
     # Steps can be seen in the docs link here -> https://github.com/apache/airflow/issues/25322
-    remote_log_conn_id: 'aws_s3_conn'
-    delete_worker_pods: 'False'
-    encrypt_s3_logs: 'True'
+    remote_log_conn_id: "aws_s3_conn"
+    delete_worker_pods: "False"
+    encrypt_s3_logs: "True"
   metrics:
     statsd_on: '{{ ternary "True" "False" .Values.statsd.enabled }}'
     statsd_port: 9125
     statsd_prefix: airflow
     statsd_host: '{{ printf "%s-statsd" .Release.Name }}'
   webserver:
-    enable_proxy_fix: 'True'
+    enable_proxy_fix: "True"
     # For Airflow 1.10
-    rbac: 'True'
+    rbac: "True"
   scheduler:
     standalone_dag_processor: '{{ ternary "True" "False" .Values.dagProcessor.enabled }}'
     # statsd params included for Airflow 1.10 backward compatibility; moved to [metrics] in 2.0
@@ -494,23 +490,22 @@ config:
     # `run_duration` included for Airflow 1.10 backward compatibility; removed in 2.0.
     run_duration: 41460
   kubernetes:
-    namespace: '{{ .Release.Namespace }}'
+    namespace: "{{ .Release.Namespace }}"
     # The following `airflow_` entries are for Airflow 1, and can be removed when it is no longer supported.
     airflow_configmap: '{{ include "airflow_config" . }}'
     airflow_local_settings_configmap: '{{ include "airflow_config" . }}'
     pod_template_file: '{{ include "airflow_pod_template_file" . }}/pod_template_file.yaml'
-    worker_container_repository: '{{ .Values.images.airflow.repository | default .Values.defaultAirflowRepository }}'
-    worker_container_tag: '{{ .Values.images.airflow.tag | default .Values.defaultAirflowTag }}'
+    worker_container_repository: "{{ .Values.images.airflow.repository | default .Values.defaultAirflowRepository }}"
+    worker_container_tag: "{{ .Values.images.airflow.tag | default .Values.defaultAirflowTag }}"
     multi_namespace_mode: '{{ ternary "True" "False" .Values.multiNamespaceMode }}'
   # The `kubernetes_executor` section duplicates the `kubernetes` section in Airflow >= 2.5.0 due to an airflow.cfg schema change.
   kubernetes_executor:
-    namespace: '{{ .Release.Namespace }}'
+    namespace: "{{ .Release.Namespace }}"
     pod_template_file: '{{ include "airflow_pod_template_file" . }}/pod_template_file.yaml'
-    worker_container_repository: '{{ .Values.images.airflow.repository | default .Values.defaultAirflowRepository }}'
-    worker_container_tag: '{{ .Values.images.airflow.tag | default .Values.defaultAirflowTag }}'
+    worker_container_repository: "{{ .Values.images.airflow.repository | default .Values.defaultAirflowRepository }}"
+    worker_container_tag: "{{ .Values.images.airflow.tag | default .Values.defaultAirflowTag }}"
     multi_namespace_mode: '{{ ternary "True" "False" .Values.multiNamespaceMode }}'
 # yamllint enable rule:line-length
-
 
 ###################################
 # Git sync
@@ -535,8 +530,8 @@ dags:
     # git repo clone url
     #repo: git@github.com:Hyper-Mesh/airflow-dags.git
     repo: git@github.com:lusoal/fm-ops-eks.git
-    branch: dags
-    subPath: "terraform/examples/dags"
+    branch: "feat/nvidia_gpu_operator"
+    subPath: "dags"
     rev: HEAD
     depth: 1
 
