@@ -23,9 +23,6 @@ def list_keys():
     return keys
 
 
-S3_BUCKET_NAME = "BUCKET_NAME"
-
-
 # def train_ray():
 #     from ray.job_submission import JobSubmissionClient
 
@@ -64,8 +61,10 @@ dag = DAG(
 #     task_id="train", requirements="ray", python_callable=train_ray, dag=dag
 # )
 
+s3_task = PythonOperator(task_id="dataset", python_callable=list_keys, dag=dag)
+
 train_task = PythonOperator(task_id="train", python_callable=train, dag=dag)
 
 serve_task = PythonOperator(task_id="serve", python_callable=serve, dag=dag)
 
-train_task >> serve_task
+s3_task >> train_task >> serve_task
