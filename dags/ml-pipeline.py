@@ -42,7 +42,7 @@ s3_sensor = S3KeySensor(
 train_task = PythonVirtualenvOperator(
     task_id="train",
     python_callable=train,
-    requirements="ray"
+    requirements="ray",
     op_kwargs={"bucket": bucket, "prefix": prefix},
     dag=dag,
 )
