@@ -7,7 +7,6 @@ from airflow.sensors.s3_key_sensor import S3KeySensor
 from airflow.operators.python_operator import PythonVirtualenvOperator
 
 from train import train
-from serve import serve
 
 default_args = {
     "owner": "fmops",
@@ -47,8 +46,4 @@ train_task = PythonVirtualenvOperator(
     dag=dag,
 )
 
-serve_task = PythonVirtualenvOperator(
-    task_id="serve", python_callable=serve, dag=dag
-)
-
-s3_sensor >> train_task >> serve_task
+s3_sensor >> train_task

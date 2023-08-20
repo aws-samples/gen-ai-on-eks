@@ -16,7 +16,7 @@ def train(bucket, prefix):
 
     ray_training = (
         "rm -rf fm-ops-eks && git clone -b feat/nvidia_gpu_operator https://github.com/lusoal/fm-ops-eks || true;"
-        "chmod +x fm-ops-eks/scripts/train_llm.py && python fm-ops-eks/scripts/train_llm.py"
+        "chmod +x fm-ops-eks/scripts/train_llm.py && python fm-ops-eks/scripts/train_llm.py --num-workers 4"
     )
 
     submission_id = ray_client.submit_job(
