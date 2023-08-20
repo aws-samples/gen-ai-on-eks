@@ -1,6 +1,9 @@
 import logging
-from sys import prefix
 from airflow.hooks.S3_hook import S3Hook
+import ray
+from ray.train.torch import TorchTrainer
+from ray.air.config import ScalingConfig, RunConfig
+from ray.tune import SyncConfig
 
 
 def train(**kwargs):
