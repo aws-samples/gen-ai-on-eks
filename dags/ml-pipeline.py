@@ -25,6 +25,7 @@ dag = DAG(
 
 bucket = Variable.get("s3_bucket")
 prefix = Variable.get("s3_prefix")
+training_key = "demo.csv"
 
 s3_sensor = S3KeySensor(
     task_id="s3_file_check",
@@ -32,7 +33,7 @@ s3_sensor = S3KeySensor(
     timeout=180,
     soft_fail=False,
     retries=2,
-    bucket_key=prefix,
+    bucket_key=f"{prefix}/{training_key}",
     bucket_name=bucket,
     aws_conn_id="s3_connection",
     dag=dag,
