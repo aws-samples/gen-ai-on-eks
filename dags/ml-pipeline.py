@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.models import Variable
 
-from airflow.operators.sensors import S3KeySensor
+from airflow.sensors.s3_key_sensor import S3KeySensor
 from airflow.operators.python import PythonOperator
 
 from train import train
