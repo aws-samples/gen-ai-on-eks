@@ -4,7 +4,7 @@ from airflow import DAG
 from airflow.models import Variable
 
 from airflow.sensors.s3_key_sensor import S3KeySensor
-from airflow.operators.python import PythonOperator
+from airflow.operators.python_operator import PythonVirtualenvOperator
 
 from train import train
 from serve import serve
@@ -39,13 +39,16 @@ s3_sensor = S3KeySensor(
     dag=dag,
 )
 
-train_task = PythonOperator(
+train_task = PythonVirtualenvOperator(
     task_id="train",
     python_callable=train,
+    requirements="ray"
     op_kwargs={"bucket": bucket, "prefix": prefix},
     dag=dag,
 )
 
-serve_task = PythonOperator(task_id="serve", python_callable=serve, dag=dag)
+serve_task = PythonVirtualenvOperator(
+    task_id="serve", python_callable=serve, dag=dag
+)
 
 s3_sensor >> train_task >> serve_task
