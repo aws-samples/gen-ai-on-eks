@@ -2,7 +2,7 @@ import logging
 import ray
 import argparse
 from ray.data.preprocessors import StandardScaler
-from ray.air.config import ScalingConfig
+from ray.air.config import RunConfig, ScalingConfig
 from ray.train.xgboost import XGBoostTrainer
 
 
@@ -42,6 +42,9 @@ if __name__ == "__main__":
             use_gpu=False,
             _max_cpu_fraction_per_node=0.9,
         ),
+        run_config=RunConfig(
+            name="training_demo", storage_path="s3://fm-ops-datasets/model"
+        ),
         label_column="target",
         num_boost_round=20,
         params={
@@ -54,3 +57,5 @@ if __name__ == "__main__":
 
     model = trainer.fit()
     logging.info(model.metrics)
+
+    ray.shutdown()
