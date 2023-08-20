@@ -10,8 +10,8 @@ module "karpenter_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
   version = "~> 5.20"
 
-  name        = "KarpenterS3ReadOnlyPolicy"
-  description = "IAM Policy to allow read from an S3 bucket for karpenter nodes"
+  name        = "KarpenterS3ReadWritePolicy"
+  description = "IAM Policy to allow read and write in a S3 bucket for karpenter nodes"
 
   policy = jsonencode(
     {
@@ -26,7 +26,7 @@ module "karpenter_policy" {
         {
           Sid      = "AllObjectActions"
           Effect   = "Allow"
-          Action   = "s3:Get*"
+          Action   = "s3:*Object"
           Resource = ["*"]
         }
       ]
