@@ -11,7 +11,7 @@ def train(bucket, prefix):
     logging.info(f"===Dataset:{keys[1]}===")
 
     ray_client = JobSubmissionClient(
-        "http://ray-cluster-kuberay-head-svc.ray-cluster.svc.cluster.local:10001"
+        "http://ray-cluster-kuberay-head-svc.ray-cluster.svc.cluster.local:8265"
     )
 
     ray_training = (
