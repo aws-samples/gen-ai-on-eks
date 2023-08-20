@@ -16,7 +16,7 @@ default_args = {
 }
 
 dag = DAG(
-    "ml-pipeline",
+    "train-pipeline",
     default_args=default_args,
     dagrun_timeout=timedelta(hours=1),
     schedule_interval="@daily",
