@@ -5,7 +5,7 @@ sample_request_input = {
     "Pregnancies": 0,
     "Glucose": 100,
     "Blood Pressure": 72,
-    "SkinThickness": 35,
+    "Skin Thickness": 35,
     "Insulin": 0,
     "BMI": 33.6,
     "Diabetes Pedigree": 0.625,
