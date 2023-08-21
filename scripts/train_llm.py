@@ -3,7 +3,6 @@ import pickle
 import logging
 import ray
 import argparse
-from ray.data.preprocessors import StandardScaler
 from ray.air.config import RunConfig, ScalingConfig
 from ray.train.xgboost import XGBoostTrainer
 
@@ -60,7 +59,7 @@ if __name__ == "__main__":
     model = trainer.fit()
     logging.info(model.metrics)
 
-    pickle_obj = pickle.dumps(model)
+    pickle_obj = pickle.dumps(model.checkpoint)
     s3_resource = boto3.resource("s3")
     s3_resource.Object(bucket, f"{prefix}/model.pkl").put(Body=pickle_obj)
 
