@@ -12,7 +12,7 @@ sample_request_input = {
 }
 
 response = requests.get(
-    "http://localhost:8000/regressor", json=sample_request_input
+    "http://localhost:8000/predict", json=sample_request_input
 )
 
 print(response.text)
