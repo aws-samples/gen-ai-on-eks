@@ -1,18 +1,19 @@
+import json
 import requests
 
 sample_request_input = {
-    "Pregnancies": 6,
-    "Glucose": 148,
-    "BloodPressure": 72,
+    "Pregnancies": 0,
+    "Glucose": 100,
+    "Blood Pressure": 72,
     "SkinThickness": 35,
     "Insulin": 0,
     "BMI": 33.6,
-    "DiabetesPedigree": 0.625,
-    "Age": 50,
+    "Diabetes Pedigree": 0.625,
+    "Age": 25,
 }
 
-response = requests.get(
-    "http://localhost:8000/predict", json=sample_request_input
-)
+response = requests.post(
+    "http://localhost:8000/", json=[sample_request_input]
+).json()
 
-print(response.text)
+print(response)
