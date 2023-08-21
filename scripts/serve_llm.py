@@ -4,12 +4,17 @@ from ray import serve
 
 ray.init(address="auto", namespace="serve")
 
+bucket = "fm-ops-datasets"
+prefix = "model"
+
 
 @serve.deployment(num_replicas=2, route_prefix="/predict")
 class XGB:
     def __init__(self):
-        with open("model.pkl", "rb") as f:
-            self.model = pickle.load(f)
+        pkl_file = ray.data.read_binary_files(
+            f"s3://{bucket}/{prefix}/model.pkl"
+        )
+        self.model = pickle.load(pkl_file)
 
     async def __call__(self, starlette_request):
         payload = await starlette_request.json()
