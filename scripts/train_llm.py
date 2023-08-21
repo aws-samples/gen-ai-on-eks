@@ -1,9 +1,15 @@
+import boto3
+import pickle
 import logging
 import ray
 import argparse
 from ray.data.preprocessors import StandardScaler
 from ray.air.config import RunConfig, ScalingConfig
 from ray.train.xgboost import XGBoostTrainer
+
+
+bucket = "fm-ops-datasets"
+prefix = "model"
 
 
 def prepare_dataset():
@@ -43,7 +49,7 @@ if __name__ == "__main__":
             _max_cpu_fraction_per_node=0.9,
         ),
         run_config=RunConfig(
-            name="training_demo", storage_path="s3://fm-ops-datasets/model"
+            name="training_demo", storage_path=f"s3://{bucket}/{prefix}"
         ),
         label_column="target",
         num_boost_round=20,
@@ -57,5 +63,9 @@ if __name__ == "__main__":
 
     model = trainer.fit()
     logging.info(model.metrics)
+
+    pickle_obj = pickle.dumps(model)
+    s3_resource = boto3.resource("s3")
+    s3_resource.Object(bucket, f"{prefix}/model.pkl").put(Body=pickle_obj)
 
     ray.shutdown()

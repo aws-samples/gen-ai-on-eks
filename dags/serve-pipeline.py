@@ -24,7 +24,7 @@ dag = DAG(
 
 bucket = Variable.get("s3_bucket")
 prefix = "model"
-training_key = "model.tar.gz"
+training_key = "model.pkl"
 
 s3_sensor = S3KeySensor(
     task_id="s3_file_check",
