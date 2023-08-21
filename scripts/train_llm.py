@@ -13,12 +13,10 @@ prefix = "model"
 
 
 def prepare_dataset():
-    dataset = ray.data.read_csv(
-        "s3://anonymous@air-example-data/breast_cancer.csv"
-    )
+    dataset = ray.data.read_csv(f"s3://{bucket}/training/demo.csv")
 
     train_dataset, valid_dataset = dataset.train_test_split(test_size=0.3)
-    test_dataset = valid_dataset.drop_columns(cols=["target"])
+    test_dataset = valid_dataset.drop_columns(cols=["Target"])
 
     return train_dataset, valid_dataset, test_dataset
 
@@ -40,7 +38,6 @@ if __name__ == "__main__":
     logging.info(ray.cluster_resources())
 
     train_dataset, valid_dataset, test_dataset = prepare_dataset()
-    preprocessor = StandardScaler(columns=["mean radius", "mean texture"])
 
     trainer = XGBoostTrainer(
         scaling_config=ScalingConfig(
@@ -51,14 +48,13 @@ if __name__ == "__main__":
         run_config=RunConfig(
             name="training_demo", storage_path=f"s3://{bucket}/{prefix}"
         ),
-        label_column="target",
+        label_column="Target",
         num_boost_round=20,
         params={
             "objective": "binary:logistic",
             "eval_metric": ["logloss", "error"],
         },
         datasets={"train": train_dataset, "valid": valid_dataset},
-        preprocessor=preprocessor,
     )
 
     model = trainer.fit()
