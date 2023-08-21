@@ -21,7 +21,7 @@ def serve(bucket, prefix):
 
     submission_id = ray_client.submit_job(
         entrypoint=ray_serving,
-        resources={"pip": ["boto3"]},
+        runtime_env={"pip": ["boto3"]},
     )
 
     logging.info(f"===Submission ID:{submission_id}===")
