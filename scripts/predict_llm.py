@@ -3,7 +3,7 @@ import requests
 
 sample_request_input = {
     "Pregnancies": 0,
-    "Glucose": 100,
+    "Glucose": 200,
     "Blood Pressure": 72,
     "Skin Thickness": 35,
     "Insulin": 0,
