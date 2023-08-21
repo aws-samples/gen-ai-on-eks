@@ -6,7 +6,7 @@ import argparse
 from ray.air.config import RunConfig, ScalingConfig
 from ray.train.xgboost import XGBoostTrainer
 
-
+ray.init(address="auto")
 bucket = "fm-ops-datasets"
 prefix = "model"
 
@@ -29,8 +29,6 @@ if __name__ == "__main__":
         help="Sets number of workers for training.",
     )
     args, _ = parser.parse_known_args()
-
-    ray.init(address="auto")
 
     logging.info("===Ray training===")
     logging.info(f"===Workers: {args.num_workers}===")
@@ -59,7 +57,7 @@ if __name__ == "__main__":
     model = trainer.fit()
     logging.info(model.metrics)
 
-    pickle_obj = pickle.dumps(model.checkpoint)
+    pickle_obj = pickle.dumps(model)
     s3_resource = boto3.resource("s3")
     s3_resource.Object(bucket, f"{prefix}/model.pkl").put(Body=pickle_obj)
 
