@@ -527,10 +527,8 @@ dags:
   gitSync:
     enabled: true
 
-    # git repo clone url
-    #repo: git@github.com:Hyper-Mesh/airflow-dags.git
-    repo: git@github.com:lusoal/fm-ops-eks.git
-    branch: "feat/nvidia_gpu_operator"
+    repo: git@github.com:lusoal/fm-ops-eks.git # This needs to be set
+    branch: "main"
     subPath: "dags"
     rev: HEAD
     depth: 1
