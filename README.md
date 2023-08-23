@@ -2,7 +2,7 @@
 
 Goal is to provide a platform that can support distributed ML systems.
 
-<!-- Copied from Instacart blog: https://tech.instacart.com/distributed-machine-learning-at-instacart-4b11d7569423 -->
+<!-- Reference from Instacart blog: https://tech.instacart.com/distributed-machine-learning-at-instacart-4b11d7569423 -->
 
 Scalability: We must be able to scale a large number of distributed ML workloads on both CPU and GPU instances with a robust system that maintains high performance and reliability. **We are going to achieve that using Karpenter.**
 
@@ -13,9 +13,14 @@ Diversity: The selected computation framework should be as extensible as possibl
 ## Pre Reqs
 - Terraform
 - Spot Linked Role
+
 ```bash
 aws iam create-service-linked-role --aws-service-name spot.amazonaws.com
 ```
+
+## Architecture Diagram
+
+![ML Ops Arch Diagram](static/ml-ops-arch-diagram.png)
 
 ## Spin-up environment
 
@@ -25,7 +30,7 @@ Open [terraform](terraform/) folder, change the desired variables on [vars.tf](t
 terraform apply --auto-approve
 ```
 
-This will provision a EKS cluster with pre-installed add-ons using [Amazon EKS Blueprints](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons), it will also install Jupyterhub for development and analysis with a mounted EFS file system, kuberay-operator to managed Ray clusters using CRDs, and Apache Airflow (TBD).
+This will provision a EKS cluster with pre-installed add-ons using [Amazon EKS Blueprints](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons), it will also install Jupyterhub for development and analysis with a mounted EFS file system, kuberay-operator to managed Ray clusters using CRDs, and Apache Airflow (TBD) connected to a Git repository in order to pull the Dags.
 
 - [Ray Docs](./kuberay-operator/README.md)
 - [JupyterHub Docs](./jupyter-hub/README.md)
