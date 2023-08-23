@@ -1,4 +1,4 @@
-# FMOps on Amazon EKS
+# ML-OPS on Amazon EKS
 
 Goal is to provide a platform that can support distributed ML systems.
 
