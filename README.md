@@ -34,3 +34,8 @@ This will provision a EKS cluster with pre-installed add-ons using [Amazon EKS B
 
 - [Ray Docs](./kuberay-operator/README.md)
 - [JupyterHub Docs](./jupyter-hub/README.md)
+
+## TODO:
+
+- [ ] Add SSH key support for Apache Airflow on Helm Chart.
+- [ ] Create steps to showcase this demo
