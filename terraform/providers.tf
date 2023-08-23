@@ -1,5 +1,20 @@
+terraform {
+  backend "s3" {
+    bucket = "fm-ops-tf-state-shagsahjs" # Replace during install.sh
+    key    = "fm-ops-demo/fm-ops-demo.json"
+    region = "us-west-2" # Replace during install.sh
+  }
+}
+
 provider "aws" {
   region = "us-west-2"
+}
+
+# ECR always authenticates with `us-east-1` region
+# Docs -> https://docs.aws.amazon.com/AmazonECR/latest/public/public-registries.html
+provider "aws" {
+  alias  = "ecr"
+  region = "us-east-1"
 }
 
 provider "kubernetes" {

@@ -1,0 +1,76 @@
+# Ray cluster installed using Helm Charts
+image:
+  repository: rayproject/ray-ml
+  tag: "latest-gpu"
+  pullPolicy: IfNotPresent
+
+head:
+  enableInTreeAutoscaling: "True"
+  resources:
+    limits:
+      cpu: "2"
+      memory: "8Gi"
+      ephemeral-storage: "200Gi"
+    requests:
+      cpu: "2"
+      memory: "8Gi"
+      ephemeral-storage: "200Gi"
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+    - name: ray-job-volume # TBD: Dont know if there is a need of this volume here
+      hostPath:
+        path: /tmp/
+  volumeMounts:
+    - mountPath: /tmp/ray
+      name: log-volume
+    - mountPath: /mnt/cluster_storage
+      name: ray-job-volume
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: '8080'
+  command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"]
+  containerEnv:
+    - name: RAY_LOG_TO_STDERR
+      value: "1"
+
+worker:
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+      cpu: "12"
+      memory: "20Gi"
+      ephemeral-storage: "200Gi"
+    requests:
+      nvidia.com/gpu: 1
+      cpu: "8"
+      memory: "16Gi"
+      ephemeral-storage: "200Gi"
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: '8080'
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+    - name: ray-job-volume
+      hostPath: # This volume is used for training jobs in the instance
+        path: /tmp/
+  # Ray writes logs to /tmp/ray/session_latests/logs
+  volumeMounts:
+    - mountPath: /tmp/ray
+      name: log-volume
+    - mountPath: /mnt/cluster_storage
+      name: ray-job-volume
+  replicas: "4"
+  minReplicas: "4"
+  maxReplicas: "10"
+  command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"] # This is used to install the required dependencies in Ray worker container image
+  containerEnv:
+    - name: RAY_LOG_TO_STDERR
+      value: "1"

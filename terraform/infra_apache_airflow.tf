@@ -400,34 +400,34 @@ YAML
   depends_on = [kubectl_manifest.efs_sc]
 }
 
-resource "helm_release" "apache_airflow" {
-  namespace        = kubernetes_namespace_v1.airflow.metadata[0].name
-  create_namespace = false
-  name             = "airflow"
-  repository       = "https://airflow.apache.org"
-  chart            = "airflow"
-  version          = "1.9.0"
-  wait             = false # This parameter is used for complete DB migrations to DB
-  # values = ["${file("${var.kuberay_cluster_values_path}")}"]
-  values = [templatefile(var.apache_airflow_values_path, {
-    airflow_version       = "2.6.3"
-    airflow_db_user       = var.airflow_name
-    airflow_db_pass       = try(sensitive(aws_secretsmanager_secret_version.postgres.secret_string), "")
-    airflow_db_host       = try(element(split(":", module.db.db_instance_endpoint), 0), "")
-    airflow_db_name       = try(module.db.db_instance_name, "")
-    webserver_secret_name = "airflow-webserver-secret-key"
+# resource "helm_release" "apache_airflow" {
+#   namespace        = kubernetes_namespace_v1.airflow.metadata[0].name
+#   create_namespace = false
+#   name             = "airflow"
+#   repository       = "https://airflow.apache.org"
+#   chart            = "airflow"
+#   version          = "1.9.0"
+#   wait             = false # This parameter is used for complete DB migrations to DB
+#   # values = ["${file("${var.kuberay_cluster_values_path}")}"]
+#   values = [templatefile(var.apache_airflow_values_path, {
+#     airflow_version       = "2.6.3"
+#     airflow_db_user       = var.airflow_name
+#     airflow_db_pass       = try(sensitive(aws_secretsmanager_secret_version.postgres.secret_string), "")
+#     airflow_db_host       = try(element(split(":", module.db.db_instance_endpoint), 0), "")
+#     airflow_db_name       = try(module.db.db_instance_name, "")
+#     webserver_secret_name = "airflow-webserver-secret-key"
 
-    airflow_workers_service_account_name   = kubernetes_service_account_v1.airflow_worker.metadata[0].name
-    airflow_scheduler_service_account_name = kubernetes_service_account_v1.airflow_scheduler.metadata[0].name
-    webserver_service_account_name         = kubernetes_service_account_v1.airflow_webserver.metadata[0].name
-    s3_bucket_name                         = try(module.airflow_s3_bucket.s3_bucket_id, "")
-    efs_pvc                                = "airflowdags-pvc"
-  })]
+#     airflow_workers_service_account_name   = kubernetes_service_account_v1.airflow_worker.metadata[0].name
+#     airflow_scheduler_service_account_name = kubernetes_service_account_v1.airflow_scheduler.metadata[0].name
+#     webserver_service_account_name         = kubernetes_service_account_v1.airflow_webserver.metadata[0].name
+#     s3_bucket_name                         = try(module.airflow_s3_bucket.s3_bucket_id, "")
+#     efs_pvc                                = "airflowdags-pvc"
+#   })]
 
-  depends_on = [
-    module.eks, module.db, kubernetes_namespace_v1.airflow, module.airflow_s3_bucket,
-    aws_iam_policy.airflow_scheduler, aws_iam_policy.airflow_webserver, aws_iam_policy.airflow_worker,
-    kubectl_manifest.airflow_webserver, module.airflow_irsa_scheduler, module.airflow_irsa_webserver,
-    module.airflow_irsa_worker, aws_efs_file_system.efs_dags_airflow, aws_efs_mount_target.efs_mt_airflow
-  ]
-}
+#   depends_on = [
+#     module.eks, module.db, kubernetes_namespace_v1.airflow, module.airflow_s3_bucket,
+#     aws_iam_policy.airflow_scheduler, aws_iam_policy.airflow_webserver, aws_iam_policy.airflow_worker,
+#     kubectl_manifest.airflow_webserver, module.airflow_irsa_scheduler, module.airflow_irsa_webserver,
+#     module.airflow_irsa_worker, aws_efs_file_system.efs_dags_airflow, aws_efs_mount_target.efs_mt_airflow
+#   ]
+# }

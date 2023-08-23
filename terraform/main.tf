@@ -91,6 +91,15 @@ module "eks" {
       ]
     },
   ]
+
+  aws_auth_users = [
+    {
+      userarn  = "arn:aws:iam::054678736585:user/martinig"
+      username = "user1"
+      groups   = ["system:masters"]
+    }
+  ]
+
   cluster_addons = {
 
     aws-ebs-csi-driver = {
@@ -115,19 +124,6 @@ module "eks" {
       min_size       = 2
       max_size       = 2
       desired_size   = 2
-
-      launch_template = {
-        block_device_mappings = [
-          {
-            device_name = "/dev/xvda"
-            ebs = {
-              volume_size           = 100
-              volume_type           = "gp3" # Use for continuous image puller jupyter
-              delete_on_termination = true
-            }
-          }
-        ]
-      }
     }
   }
 
