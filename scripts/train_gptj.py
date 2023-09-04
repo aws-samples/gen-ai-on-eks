@@ -27,6 +27,7 @@ storage_path=f"s3://{bucket}/checkpoints/"
 use_gpu = True
 num_workers = 4
 cpus_per_worker = 8
+block_size = 512
 
 ray.init(
     address="auto", # Adress is auto because this script will run inside Ray Cluster
