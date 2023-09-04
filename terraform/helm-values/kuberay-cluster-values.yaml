@@ -30,7 +30,7 @@ head:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
-  command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"]
+  # command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
@@ -38,12 +38,12 @@ head:
 worker:
   resources:
     limits:
-      # nvidia.com/gpu: 1
+      nvidia.com/gpu: 1
       cpu: "12"
       memory: "20Gi"
       ephemeral-storage: "200Gi"
     requests:
-      # nvidia.com/gpu: 1
+      nvidia.com/gpu: 1
       cpu: "8"
       memory: "16Gi"
       ephemeral-storage: "200Gi"
@@ -51,10 +51,10 @@ worker:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
-  # tolerations:
-  #   - key: "nvidia.com/gpu"
-  #     operator: "Exists"
-  #     effect: "NoSchedule"
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
   volumes:
     - name: log-volume
       emptyDir: {}
@@ -67,10 +67,10 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "1"
-  minReplicas: "1"
+  replicas: "5"
+  minReplicas: "5"
   maxReplicas: "10"
-  command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"] # This is used to install the required dependencies in Ray worker container image
+  # command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"] # This is used to install the required dependencies in Ray worker container image
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
