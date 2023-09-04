@@ -142,18 +142,18 @@ module "eks_blueprints_addons" {
 # "Dummy" pods, to forcefully scale karpenter,
 # this is needed because GPU Operator needs to configure instance before running notebook
 #----------------------------------------------------------------------------------------
-data "kubectl_path_documents" "dummy_pods" {
-  pattern = "${path.module}/examples/dummy-pods/*-dummy.yaml"
-  vars = {
-    cluster_name = module.eks.cluster_name
-  }
-}
+# data "kubectl_path_documents" "dummy_pods" {
+#   pattern = "${path.module}/examples/dummy-pods/*-dummy.yaml"
+#   vars = {
+#     cluster_name = module.eks.cluster_name
+#   }
+# }
 
-resource "kubectl_manifest" "dummy_pods" {
-  for_each  = toset(data.kubectl_path_documents.dummy_pods.documents)
-  yaml_body = each.value
+# resource "kubectl_manifest" "dummy_pods" {
+#   for_each  = toset(data.kubectl_path_documents.dummy_pods.documents)
+#   yaml_body = each.value
 
-  depends_on = [module.eks_blueprints_addons]
-}
+#   depends_on = [module.eks_blueprints_addons]
+# }
 
 

@@ -29,6 +29,8 @@ num_workers = 4
 cpus_per_worker = 8
 block_size = 512
 
+os.environ['CUDA_HOME'] = "$CONDA_PREFIX"  # Adjust this path to your CUDA installation
+
 ray.init(
     address="auto", # Adress is auto because this script will run inside Ray Cluster
     runtime_env={
@@ -43,6 +45,10 @@ ray.init(
             "transformers==4.26.0",
             "torch>=1.12.0",
             "deepspeed==0.9.2",
+        ],
+        "conda": [
+            "nvidia",
+            "cuda"
         ]
     }
 )

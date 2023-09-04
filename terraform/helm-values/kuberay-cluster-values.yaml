@@ -1,7 +1,7 @@
 # Ray cluster installed using Helm Charts
 image:
   repository: rayproject/ray-ml
-  tag: "latest-cpu"
+  tag: "latest-gpu"
   pullPolicy: IfNotPresent
 
 head:
@@ -40,12 +40,12 @@ worker:
     limits:
       nvidia.com/gpu: 1
       cpu: "12"
-      memory: "20Gi"
+      memory: "50Gi"
       ephemeral-storage: "200Gi"
     requests:
       nvidia.com/gpu: 1
       cpu: "8"
-      memory: "16Gi"
+      memory: "50Gi"
       ephemeral-storage: "200Gi"
   annotations:
     prometheus.io/scrape: 'true'
@@ -67,9 +67,9 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "5"
-  minReplicas: "5"
-  maxReplicas: "10"
+  replicas: "4"
+  minReplicas: "4"
+  maxReplicas: "4"
   # command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"] # This is used to install the required dependencies in Ray worker container image
   containerEnv:
     - name: RAY_LOG_TO_STDERR
