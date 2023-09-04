@@ -21,7 +21,7 @@ from ray.air import RunConfig, ScalingConfig
 from ray.data.preprocessors import Chain
 
 # GLOBAL VARIABLES DEFINITION, those can be captured as parameters 
-model_name = "EleutherAI/gpt-j-6B"
+model_name = "EleutherAI/gpt-j-6b"
 bucket = "fm-ops-datasets"
 storage_path=f"s3://{bucket}/checkpoints/"
 use_gpu = True
