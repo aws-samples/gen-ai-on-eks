@@ -43,8 +43,7 @@ ray.init(
             # TODO(jungong) : get rid of the pins once the issue is fixed.
             "accelerate==0.20.3",
             "transformers==4.26.0",
-            "torch>=1.12.0",
-            "deepspeed==0.9.2",
+            "torch>=1.12.0"
         ]
     }
 )
