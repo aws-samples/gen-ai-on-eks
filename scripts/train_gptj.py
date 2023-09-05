@@ -45,10 +45,6 @@ ray.init(
             "transformers==4.26.0",
             "torch>=1.12.0",
             "deepspeed==0.9.2",
-        ],
-        "conda": [
-            "nvidia",
-            "cuda"
         ]
     }
 )
