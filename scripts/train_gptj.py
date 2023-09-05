@@ -29,7 +29,7 @@ num_workers = 4
 cpus_per_worker = 8
 block_size = 512
 
-os.environ['CUDA_HOME'] = "$CONDA_PREFIX"  # Adjust this path to your CUDA installation
+os.environ['CUDA_HOME'] = "/usr/local/cuda-11/"  # Adjust this path to your CUDA installation
 
 ray.init(
     address="auto", # Adress is auto because this script will run inside Ray Cluster
