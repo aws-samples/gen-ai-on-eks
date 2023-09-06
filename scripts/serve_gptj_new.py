@@ -68,8 +68,10 @@ class PredictDeployment:
             input_ids,
             do_sample=True,
             temperature=0.9,
-            max_length=100,
+            min_length=32,
+            max_length=128,
         )
+        
         return pd.DataFrame(
             self.tokenizer.batch_decode(gen_tokens), columns=["responses"]
         )
