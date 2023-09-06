@@ -32,6 +32,8 @@ class PredictDeployment:
         from transformers import AutoModelForCausalLM, AutoTokenizer
         import torch
 
+        print(os.listdir("./"))
+        
         self.model = AutoModelForCausalLM.from_pretrained(
             model_id,
             revision=revision,
