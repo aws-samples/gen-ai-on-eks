@@ -5,7 +5,7 @@ import requests
 import requests
 
 prompt = (
-    "Shakespere"
+    "I love each"
 )
 
 ray_adress = "http://localhost:8000/"
