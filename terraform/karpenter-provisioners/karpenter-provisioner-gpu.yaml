@@ -14,10 +14,10 @@ spec:
       values: [ "on-demand" ]
     - key: "karpenter.k8s.aws/instance-family"
       operator: In
-      values: ["g5"]
+      values: ["g5", "p3"]
     - key: "karpenter.k8s.aws/instance-size"
       operator: In
-      values: [ "4xlarge" ]
+      values: ["2xlarge", "4xlarge", "8xlarge"]
   providerRef:
     name: gpu
   labels:
