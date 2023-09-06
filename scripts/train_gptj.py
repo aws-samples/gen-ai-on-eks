@@ -25,7 +25,7 @@ model_name = "EleutherAI/gpt-j-6b"
 bucket = "fm-ops-datasets"
 storage_path=f"s3://{bucket}/checkpoints/"
 use_gpu = True
-num_workers = 4
+num_workers = 8
 cpus_per_worker = 8
 block_size = 512
 
