@@ -82,6 +82,9 @@ s3.download_file(bucket, tokenizer_key, "local_model/tokenizer.json")
 s3.download_file(bucket, config_key, "local_model/config.json")
 
 print("Finished download of s3 files")
+# List dirs using OS module
+print(os.listdir(local_dir))
+print(os.listdir("./"))
 
 # Deploy
 model_dir = local_dir
