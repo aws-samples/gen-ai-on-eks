@@ -77,9 +77,11 @@ config_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTr
 # Download model and tokenizer from S3 to a local directory
 local_dir = "local_model"
 os.makedirs(local_dir, exist_ok=True)
-s3.download_file(bucket, model_key, os.path.join(local_dir, "pytorch_model.bin"))
-s3.download_file(bucket, tokenizer_key, os.path.join(local_dir, "tokenizer.json"))
-s3.download_file(bucket, config_key, os.path.join(local_dir, "config.json"))
+s3.download_file(bucket, model_key, "local_model/pytorch_model.bin")
+s3.download_file(bucket, tokenizer_key, "local_model/tokenizer.json")
+s3.download_file(bucket, config_key, "local_model/config.json")
+
+print("Finished download of s3 files")
 
 # Deploy
 model_dir = local_dir
