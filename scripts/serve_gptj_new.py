@@ -54,9 +54,9 @@ class PredictDeployment:
             model_id,
             revision=revision,
             torch_dtype=torch.float16,
-            low_cpu_mem_usage=True,
-            device_map="auto",  # automatically makes use of all GPUs available to the Actor
-        )
+            low_cpu_mem_usage=True
+        ).cuda()
+        
         self.tokenizer = AutoTokenizer.from_pretrained(model_id)
 
     def generate(self, text: str) -> pd.DataFrame:
