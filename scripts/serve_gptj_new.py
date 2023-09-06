@@ -31,8 +31,24 @@ class PredictDeployment:
     def __init__(self, model_id: str, revision: str = None):
         from transformers import AutoModelForCausalLM, AutoTokenizer
         import torch
+        
+        print("Downloading model and tokenizer from S3")
+        # Create folder for custmo model and tokenizer
+        local_dir = "local_model"
+        os.makedirs(local_dir, exist_ok=True)
+        
+        # Initialize S3 client
+        s3 = boto3.client("s3")
+        bucket = "fm-ops-datasets"
+        model_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTrainer_f638a_00000_0_2023-09-05_12-25-24/checkpoint_000000/pytorch_model.bin"
+        tokenizer_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTrainer_f638a_00000_0_2023-09-05_12-25-24/checkpoint_000000/tokenizer.json"
+        config_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTrainer_f638a_00000_0_2023-09-05_12-25-24/checkpoint_000000/config.json"
 
-        print(os.listdir("./"))
+        s3.download_file(bucket, model_key, "local_model/pytorch_model.bin")
+        s3.download_file(bucket, tokenizer_key, "local_model/tokenizer.json")
+        s3.download_file(bucket, config_key, "local_model/config.json")
+        
+        print("Model and tokenizer downloaded")
         
         self.model = AutoModelForCausalLM.from_pretrained(
             model_id,
@@ -69,26 +85,7 @@ class PredictDeployment:
                 prompts.append(text)
         return self.generate(prompts)
 
-# Initialize S3 client
-s3 = boto3.client("s3")
-bucket = "fm-ops-datasets"
-model_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTrainer_f638a_00000_0_2023-09-05_12-25-24/checkpoint_000000/pytorch_model.bin"
-tokenizer_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTrainer_f638a_00000_0_2023-09-05_12-25-24/checkpoint_000000/tokenizer.json"
-config_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTrainer_f638a_00000_0_2023-09-05_12-25-24/checkpoint_000000/config.json"
-
-# Download model and tokenizer from S3 to a local directory
-local_dir = "local_model"
-os.makedirs(local_dir, exist_ok=True)
-s3.download_file(bucket, model_key, "local_model/pytorch_model.bin")
-s3.download_file(bucket, tokenizer_key, "local_model/tokenizer.json")
-s3.download_file(bucket, config_key, "local_model/config.json")
-
-print("Finished download of s3 files")
-# List dirs using OS module
-print(os.listdir(local_dir))
-print(os.listdir("./"))
-
 # Deploy
-model_dir = local_dir
+model_dir = "local_model"
 deployment = PredictDeployment.bind(model_id=model_dir)
 serve.run(deployment)
