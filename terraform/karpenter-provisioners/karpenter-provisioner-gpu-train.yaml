@@ -3,7 +3,7 @@
 apiVersion: karpenter.sh/v1alpha5
 kind: Provisioner
 metadata:
-  name: gpu
+  name: gpu-train
   namespace: karpenter
 spec:
   kubeletConfiguration:
@@ -14,16 +14,16 @@ spec:
       values: [ "on-demand" ]
     - key: "karpenter.k8s.aws/instance-family"
       operator: In
-      values: ["g5", "p3"]
+      values: ["g5"]
     - key: "karpenter.k8s.aws/instance-size"
       operator: In
       values: ["2xlarge", "4xlarge", "8xlarge"]
   providerRef:
-    name: gpu
+    name: gpu-train
   labels:
     type: karpenter
-    provisioner: gpu
-    NodeGroupType: gpu
+    provisioner: gpu-train
+    NodeGroupType: gpu-train
   taints:
     - key: nvidia.com/gpu
       effect: "NoSchedule"
@@ -33,7 +33,7 @@ spec:
 apiVersion: karpenter.k8s.aws/v1alpha1
 kind: AWSNodeTemplate
 metadata:
-  name: gpu
+  name: gpu-train
   namespace: karpenter
 spec:
   amiFamily: Ubuntu
