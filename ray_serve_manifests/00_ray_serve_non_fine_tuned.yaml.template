@@ -1,3 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ray-svc-non-finetuned
+---
 apiVersion: ray.io/v1alpha1
 kind: RayService
 metadata:
@@ -14,7 +19,7 @@ spec:
         import_path: 00_serve_gptj_non_finetuned.deployment_gptj_non_finetuned 
         route_prefix: /gptj_non_finetuned
         runtime_env:
-          working_dir: "__CHANGE_HERE__"
+          working_dir: "${PRESIGNED_URL}"
           pip: 
             - transformers==4.26.0
             - torch>=1.12.0

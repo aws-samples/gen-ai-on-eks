@@ -30,9 +30,11 @@ aws iam create-service-linked-role --aws-service-name spot.amazonaws.com
 
 ![ML Ops Arch Diagram](static/ml-ops-arch-diagram.png)
 
-### Single EKS Cluster with Dual Ray Clusters
+### Single EKS Cluster with Dynamic Ray Clustering
 
-This demonstration utilizes a single EKS cluster to manage two distinct Ray clusters for training and serving, powered by the Ray Operator. Each Ray cluster has its own Karpenter provisioner, enabling us to tailor the compute resources for each workload effectively.
+This demonstration showcases the flexibility of a single EKS (Elastic Kubernetes Service) cluster in managing diverse Ray workloads through multiple Ray clusters, orchestrated by the Ray Operator. One Ray cluster is pre-deployed specifically for training tasks, utilizing the RayJobSubmission API for streamlined job management. Additional Ray clusters can be dynamically spun up on-demand for various other workloads like serving, simulation, or data processing.
+
+To further optimize resource allocation for these distinct workloads, each Ray cluster is equipped with its own Karpenter provisioner. This allows us to fine-tune the compute resources that are dedicated to each Ray cluster, ensuring efficiency and cost-effectiveness.
 
 ## Environment Setup
 
@@ -86,11 +88,19 @@ terraform apply --auto-approve
 This command provisions an EKS cluster along with the following components:
 
 - **JupyterHub**: For development and analysis
+- **Nvidia GPU Operator**: The GPU Operator allows administrators of Kubernetes clusters to manage GPU nodes just like CPU nodes in the cluster, instead of provisioning a special OS image.
 - **Ray Operator**: To manage Ray clusters
 - **Karpenter**: For automatic scaling
 - **Kube Prometheus Stack**: For observability
 - **Apache Airflow**: To automate the e2e ML pipeline, fetching DAGs from this Git repository
 
+### Exporting terraform outputs
+
+Since we will be pushing code to Amazon S3 let's export the `BUCKET_NAME`
+
+```bash
+export BUCKET_NAME=$(terraform output -raw bucket_name)
+```
 ### Update Kubeconfig
 
 ```bash
@@ -105,17 +115,14 @@ kubectl get nodes
 
 You should see output similar to:
 
-```
+```bash
 NAME                                        STATUS   ROLES    AGE     VERSION
 ip-10-8-11-154.us-west-2.compute.internal   Ready    <none>   21d     v1.27.3-eks-a5565ad
 ip-10-8-20-67.us-west-2.compute.internal    Ready    <none>   2d22h   v1.27.4-eks-8ccc7ba
 ip-10-8-22-144.us-west-2.compute.internal   Ready    <none>   60m     v1.27.3
 ip-10-8-23-25.us-west-2.compute.internal    Ready    <none>   67m     v1.27.3
 ip-10-8-23-84.us-west-2.compute.internal    Ready    <none>   70m     v1.27.3
-ip-10-8-24-190.us-west-2.compute.internal   Ready    <none>   67m     v1.27.3
-ip-10-8-26-250.us-west-2.compute.internal   Ready    <none>   70m     v1.27.3
-ip-10-8-26-80.us-west-2.compute.internal    Ready    <none>   67m     v1.27.3
-ip-10-8-29-105.us-west-2.compute.internal   Ready    <none>   21d     v1.27.3-eks-a5565ad
+... additional nodes
 ```
 
 You're now ready to proceed with the demonstration.
