@@ -1,8 +1,8 @@
 apiVersion: ray.io/v1alpha1
 kind: RayService
 metadata:
-  name: ray-service-serve-gptj
-  namespace: ray-service-serve-gptj
+  name: ray-svc-non-finetuned
+  namespace: ray-svc-non-finetuned
 spec:
   serviceUnhealthySecondThreshold: 900 # Config for the health check threshold for Ray Serve applications. Default value is 900.
   deploymentUnhealthySecondThreshold: 300 # Config for the health check threshold for Ray dashboard agent. Default value is 300.
@@ -14,7 +14,7 @@ spec:
         import_path: 00_serve_gptj_non_finetuned.deployment_gptj_non_finetuned 
         route_prefix: /gptj_non_finetuned
         runtime_env:
-          working_dir: "https://fm-ops-datasets.s3.amazonaws.com/00_serve_gptj_non_finetuned.zip"
+          working_dir: "__CHANGE_HERE__"
           pip: 
             - transformers==4.26.0
             - torch>=1.12.0

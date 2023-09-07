@@ -28,10 +28,6 @@ variable "kuberay_cluster_train_values_path" {
   default = "helm-values/kuberay-cluster-values-train.yaml"
 }
 
-variable "kuberay_cluster_serve_values_path" {
-  default = "helm-values/kuberay-cluster-values-serve.yaml"
-}
-
 # NVIDIA Operator
 
 variable "nvidia_gpu_values_path" {
