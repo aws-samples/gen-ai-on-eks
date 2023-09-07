@@ -100,14 +100,24 @@ module "eks_blueprints_addons" {
       chart_version    = "0.5.0"
       repository       = "https://ray-project.github.io/kuberay-helm/"
     }
-    ray-cluster = {
+    ray-cluster-serve = {
       description      = "A Helm chart for RAY operator"
-      namespace        = "ray-cluster"
+      namespace        = "ray-cluster-serve"
       create_namespace = true
       chart            = "ray-cluster"
       chart_version    = "0.5.0"
       repository       = "https://ray-project.github.io/kuberay-helm/"
-      values           = ["${file("${var.kuberay_cluster_values_path}")}"]
+      values           = ["${file("${var.kuberay_cluster_serve_values_path}")}"]
+    }
+
+    ray-cluster-train = {
+      description      = "A Helm chart for RAY operator"
+      namespace        = "ray-cluster-train"
+      create_namespace = true
+      chart            = "ray-cluster"
+      chart_version    = "0.5.0"
+      repository       = "https://ray-project.github.io/kuberay-helm/"
+      values           = ["${file("${var.kuberay_cluster_train_values_path}")}"]
     }
     apache-airflow = {
       description      = "A Helm chart for Apache Airflow"

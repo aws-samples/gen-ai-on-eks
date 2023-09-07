@@ -32,6 +32,8 @@ head:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
+  nodeSelector:
+    provisioner: gpu-serve # This is used to forcefully scale Karpenter specific provisioner for serve
   tolerations:
     - key: "nvidia.com/gpu"
       operator: "Exists"
@@ -59,6 +61,8 @@ worker:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
+  nodeSelector:
+    NodeGroupType: gpu-serve # This is used to forcefully scale Karpenter specific provisioner for serve
   tolerations:
     - key: "nvidia.com/gpu"
       operator: "Exists"
@@ -75,14 +79,19 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "3"
-  minReplicas: "3"
-  maxReplicas: "4"
-  # command: ["pip install 'torchmetrics>=0.9' 'pytorch_lightning>=1.6' 'filelock' 'torchvision' 'PyTorch-lightning'"] # This is used to install the required dependencies in Ray worker container image
-  # command: ["conda install -c 'nvidia/label/cuda-11.6.0' cuda-toolkit && DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
+  replicas: "1"
+  minReplicas: "1"
+  maxReplicas: "10"
   command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
     - name: CUDA_HOME
       values: "/usr/local/cuda"
+
+service:
+  # This is optional, and the default is ClusterIP.
+  type: LoadBalancer
+  # Optional, for the user to provide any additional fields to the service.
+  # See https://pkg.go.dev/k8s.io/Kubernetes/pkg/api/v1#Service
+  headService: {}

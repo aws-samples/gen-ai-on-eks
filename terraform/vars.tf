@@ -24,8 +24,12 @@ variable "jupyter_hub_values_path" {
   default = "helm-values/jupyterhub-values.yaml"
 }
 
-variable "kuberay_cluster_values_path" {
-  default = "helm-values/kuberay-cluster-values.yaml"
+variable "kuberay_cluster_train_values_path" {
+  default = "helm-values/kuberay-cluster-values-train.yaml"
+}
+
+variable "kuberay_cluster_serve_values_path" {
+  default = "helm-values/kuberay-cluster-values-serve.yaml"
 }
 
 # NVIDIA Operator
