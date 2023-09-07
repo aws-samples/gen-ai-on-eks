@@ -53,6 +53,15 @@ resource "kubectl_manifest" "karpenter_provisioner" {
   depends_on = [module.eks_blueprints_addons]
 }
 
+# Bucket to persist training data and output model
+resource "aws_s3_bucket" "fm_ops_data" {
+  bucket_prefix = "datasets-checkpoints"
+
+  tags = {
+    Name = "datasets-checkpoints"
+  }
+}
+
 module "eks_blueprints_addons" {
   source            = "github.com/aws-ia/terraform-aws-eks-blueprints-addons?ref=v1.2.2"
   cluster_name      = module.eks.cluster_name
@@ -147,23 +156,5 @@ module "eks_blueprints_addons" {
     Environment = "mlops-dev"
   }
 }
-
-#----------------------------------------------------------------------------------------
-# "Dummy" pods, to forcefully scale karpenter,
-# this is needed because GPU Operator needs to configure instance before running notebook
-#----------------------------------------------------------------------------------------
-# data "kubectl_path_documents" "dummy_pods" {
-#   pattern = "${path.module}/examples/dummy-pods/*-dummy.yaml"
-#   vars = {
-#     cluster_name = module.eks.cluster_name
-#   }
-# }
-
-# resource "kubectl_manifest" "dummy_pods" {
-#   for_each  = toset(data.kubectl_path_documents.dummy_pods.documents)
-#   yaml_body = each.value
-
-#   depends_on = [module.eks_blueprints_addons]
-# }
 
 

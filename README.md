@@ -1,41 +1,121 @@
-# ML-OPS on Amazon EKS
+# Fine-tuning Foundation Models on Amazon EKS for AI/ML Workloads
 
-Goal is to provide a platform that can support distributed ML systems.
+This project aims to showcase the power of Amazon EKS for AI/ML tasks, specifically for fine-tuning Foundation Models like GPTJ. Utilizing a single Amazon EKS cluster, we run two separate Ray clusters for training and serving tasks, all managed by the Ray Operator. This project leverages additional tools like Karpenter for auto-scaling and JupyterHub for code development and data analysis.
 
-<!-- Reference from Instacart blog: https://tech.instacart.com/distributed-machine-learning-at-instacart-4b11d7569423 -->
+> **Inspiration**: [Distributed Machine Learning at Instacart](https://tech.instacart.com/distributed-machine-learning-at-instacart-4b11d7569423)
 
-Scalability: We must be able to scale a large number of distributed ML workloads on both CPU and GPU instances with a robust system that maintains high performance and reliability. **We are going to achieve that using Karpenter.**
+## Features
 
-Resource Efficiency: We aim to fully utilize distributed computation resources to maximize system throughput and achieve the fastest execution at optimal cost.
+- **Rapid Experimentation**: Develop and test training and serving scripts via Jupyter Notebook instances provisioned by JupyterHub.
+- **Scalability**: Efficiently scale numerous distributed ML workloads on both CPU and GPU instances using Karpenter.
+- **Resource Efficiency**: Maximize system throughput by fully utilizing distributed computation resources.
+- **Diverse Environment Support**: Extensible computation framework capable of supporting various ML paradigms and workloads.
 
-Diversity: The selected computation framework should be as extensible as possible to support diverse distributed ML paradigms. In addition, we should be able to handle diverse environments that are specific to different ML workloads.
+## Prerequisites
 
-## Pre Reqs
+- AWS Credentials configured
+- AWS CLI
+- kubectl
+- Helm
 - Terraform
-- Spot Linked Role
+- Spot Instance Linked Role
+
+### Create Spot Instance Linked Role
 
 ```bash
 aws iam create-service-linked-role --aws-service-name spot.amazonaws.com
 ```
 
-## Architecture Diagram
+## Architecture
 
 ![ML Ops Arch Diagram](static/ml-ops-arch-diagram.png)
 
-## Spin-up environment
+### Single EKS Cluster with Dual Ray Clusters
 
-Open [terraform](terraform/) folder, change the desired variables on [vars.tf](terraform/vars.tf) and execute the following command:
+This demonstration utilizes a single EKS cluster to manage two distinct Ray clusters for training and serving, powered by the Ray Operator. Each Ray cluster has its own Karpenter provisioner, enabling us to tailor the compute resources for each workload effectively.
+
+## Environment Setup
+
+### Initialize Global Variables
+
+```bash
+export TERRAFORM_STATE_BUCKET="<DEFINE A NAME FOR YOUR STATE BUCKET>"
+export AWS_REGION="<DEFINE YOUR AWS REGION>"
+```
+
+### Create S3 Bucket for Terraform State
+
+```bash
+aws s3 mb s3://$TERRAFORM_STATE_BUCKET --region $AWS_REGION
+```
+
+### Update Terraform Configuration Files
+
+Navigate to the [`terraform/`](terraform/) directory and update `providers.tf` and `vars.tf`:
+
+#### `providers.tf`
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket = "TERRAFORM_STATE_BUCKET" # REPLACE HERE
+    key    = "fm-ops-demo/fm-ops-demo.json"
+    region = "AWS_REGION"              # REPLACE HERE
+  }
+}
+
+provider "aws" {
+  region = "AWS_REGION"               # REPLACE HERE
+}
+```
+
+#### `vars.tf`
+
+```hcl
+variable "aws_region" {
+  default = "AWS_REGION"              # REPLACE HERE
+}
+```
+
+### Apply Terraform Script
 
 ```bash
 terraform apply --auto-approve
 ```
 
-This will provision a EKS cluster with pre-installed add-ons using [Amazon EKS Blueprints](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons), it will also install Jupyterhub for development and analysis with a mounted EFS file system, kuberay-operator to managed Ray clusters using CRDs, and Apache Airflow (TBD) connected to a Git repository in order to pull the Dags.
+This command provisions an EKS cluster along with the following components:
 
-- [Ray Docs](./kuberay-operator/README.md)
-- [JupyterHub Docs](./jupyter-hub/README.md)
+- **JupyterHub**: For development and analysis
+- **Ray Operator**: To manage Ray clusters
+- **Karpenter**: For automatic scaling
+- **Kube Prometheus Stack**: For observability
+- **Apache Airflow**: To automate the e2e ML pipeline, fetching DAGs from this Git repository
 
-## TODO:
+### Update Kubeconfig
 
-- [ ] Add SSH key support for Apache Airflow on Helm Chart.
-- [ ] Create steps to showcase this demo
+```bash
+aws eks update-kubeconfig --region $AWS_REGION --name fmops-cluster
+```
+
+### Validate Cluster Setup
+
+```bash
+kubectl get nodes
+```
+
+You should see output similar to:
+
+```
+NAME                                        STATUS   ROLES    AGE     VERSION
+ip-10-8-11-154.us-west-2.compute.internal   Ready    <none>   21d     v1.27.3-eks-a5565ad
+ip-10-8-20-67.us-west-2.compute.internal    Ready    <none>   2d22h   v1.27.4-eks-8ccc7ba
+ip-10-8-22-144.us-west-2.compute.internal   Ready    <none>   60m     v1.27.3
+ip-10-8-23-25.us-west-2.compute.internal    Ready    <none>   67m     v1.27.3
+ip-10-8-23-84.us-west-2.compute.internal    Ready    <none>   70m     v1.27.3
+ip-10-8-24-190.us-west-2.compute.internal   Ready    <none>   67m     v1.27.3
+ip-10-8-26-250.us-west-2.compute.internal   Ready    <none>   70m     v1.27.3
+ip-10-8-26-80.us-west-2.compute.internal    Ready    <none>   67m     v1.27.3
+ip-10-8-29-105.us-west-2.compute.internal   Ready    <none>   21d     v1.27.3-eks-a5565ad
+```
+
+You're now ready to proceed with the demonstration.
