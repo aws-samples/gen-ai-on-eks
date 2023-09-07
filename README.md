@@ -119,3 +119,35 @@ ip-10-8-29-105.us-west-2.compute.internal   Ready    <none>   21d     v1.27.3-ek
 ```
 
 You're now ready to proceed with the demonstration.
+
+## Modules in This Demonstration
+
+The demonstration is broken down into several key modules, each focusing on a specific aspect of fine-tuning Foundation Models like GPTJ on Amazon EKS. By the end of this demonstration, you'll have an end-to-end example showcasing the versatility and power of EKS for AI/ML workloads.
+
+### 1. Serving a Non Fine-Tuned Model with Ray
+
+In this module, you'll learn how to deploy a generic, non-fine-tuned GPTJ model using Ray Serve. This sets the stage for comparison with a fine-tuned model later in the demo.
+
+### 2. Crafting the Training Script in Jupyter Notebook
+
+This module covers how to create a Jupyter Notebook that encapsulates the training script you'll use for fine-tuning the GPTJ model. We focus on integrating contextual data into the model, setting up the environment for rapid experimentation.
+
+### 3. Initiating Training via RayJobSubmission
+
+Once the training script is ready, you'll use the Ray Job Submission API to kick off the training process. This module covers the entire process, from job configuration to actual submission.
+
+### 4. On-Demand Node Scaling with Karpenter
+
+Here, we dive into how Karpenter dynamically scales the EKS cluster's nodes based on workload requirements. This includes real-time scaling to handle the demands of the fine-tuning process.
+
+### 5. Monitoring GPU Utilization in the Ray Dashboard
+
+In this module, we'll explore the Ray Dashboard, focusing on how to monitor GPU utilization. Understanding resource usage is crucial for optimizing machine learning workloads.
+
+### 6. Creating the Serving Script for the Fine-Tuned Model in Jupyter Notebook
+
+Once the model is fine-tuned, you'll create another Jupyter Notebook to house the serving script. This script will handle the deployment of your fine-tuned GPTJ model using Ray Serve.
+
+### 7. Serving the Fine-Tuned Model
+
+Finally, you'll learn how to use the serving script to deploy the fine-tuned model, offering insights into its performance and advantages over the non-fine-tuned version. We'll also discuss how to route traffic to the fine-tuned model and perform any necessary optimizations.
