@@ -25,7 +25,7 @@ model_name = "EleutherAI/gpt-j-6b"
 bucket = "fm-ops-datasets"
 storage_path=f"s3://{bucket}/checkpoints/"
 use_gpu = True
-num_workers = 8
+num_workers = 11
 cpus_per_worker = 8
 block_size = 512
 
@@ -199,7 +199,7 @@ tokenizer = BatchMapper(tokenize, batch_format="pandas")
 trainer = TransformersTrainer(
     trainer_init_per_worker=trainer_init_per_worker,
     trainer_init_config={
-        "batch_size": 8,  # per device
+        "batch_size": 16,  # per device
         "epochs": 1,
     },
     scaling_config=ScalingConfig(
