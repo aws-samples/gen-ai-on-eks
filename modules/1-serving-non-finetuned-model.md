@@ -97,12 +97,78 @@ kubectl get po -n ray-svc-non-finetuned -w
 
 > It can take a while to initialize because of the dependencies (GPU Operator and pulling Ray Images)
 
-### Verify if the application is already being served:
+### Verifying the Deployed Application
 
-Let's start by using port-forward to get access to Ray Dashboard:
+#### Check if the Service is Running
+
+To ensure that the service exposing our non-fine-tuned model is active and running, execute the following command:
 
 ```bash
-kubectl port-forward svc/$(kubectl get svc -nray-svc-non-finetuned | grep -i ray-svc | awk '{print $1}') 8265:8265 -n ray-svc-non-finetuned
+kubectl get svc -n ray-svc-non-finetuned
 ```
+
+**Expected Output**:
+
+You should see an output similar to the following:
+
+```bash
+ray-svc-non-finetuned-head-svc                    ClusterIP   172.20.214.232   <none>        10001/TCP,8265/TCP,52365/TCP,6379/TCP,8080/TCP,8000/TCP   36m
+ray-svc-non-finetuned-raycluster-kmfjg-head-svc   ClusterIP   172.20.37.172    <none>        10001/TCP,8265/TCP,52365/TCP,6379/TCP,8080/TCP,8000/TCP   52m
+ray-svc-non-finetuned-serve-svc                   ClusterIP   172.20.91.55     <none>        8000/TCP
+```
+
+The service named `ray-svc-non-finetuned-serve-svc` should be visible and listen on port `8000/TCP`.
+
+#### Access the Service
+
+For the sake of this demonstration, we are not using a LoadBalancer or Ingress to expose the service. Instead, we'll use the `port-forward` command to route traffic to the service.
+
+> **Note**: Open a new terminal for this step.
+
+```bash
+kubectl port-forward svc/ray-svc-non-finetuned-serve-svc 8000:8000 -n ray-svc-non-finetuned
+```
+
+### Interacting with the Deployed Model
+
+#### Set Up the Chatbot Application
+
+We have prepared a sample chatbot application that will interact with our deployed model.
+
+1. **Navigate to the sample application directory**:
+
+```bash
+cd ../sample_app
+```
+
+2. **Install Python dependencies**:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. **Define the model endpoint as an environment variable**:
+
+```bash
+export MODEL_ENDPOINT="/gptj_non_finetuned"
+```
+
+#### Run the Application
+
+With the environment variable set, you can now run the chatbot application.
+
+```bash
+python app.py
+```
+
+#### Access the Chatbot
+
+Open your web browser and navigate to `http://127.0.0.1:7860` to start interacting with your deployed model.
+
+![Chat Bot](../static/chat-bot-1.png)
+
+> **Note**: This model does not contain the contextual data of newer Kubernetes releases as it is based on the GPT-2-like GPTJ model, trained on the [Pile](https://pile.eleuther.ai/) dataset.
+
+
 
 

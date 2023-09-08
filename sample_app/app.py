@@ -1,7 +1,9 @@
 import gradio as gr
 import requests
+import os
 
-ray_adress = "http://localhost:8000/gptj_non_finetuned"
+model_endpoint = os.getenv("MODEL_ENDPOINT") 
+ray_adress = f"http://localhost:8000{model_endpoint}"
 
 def text_generation(message, history):
     
