@@ -25,8 +25,8 @@ model_name = "EleutherAI/gpt-j-6b"
 bucket = "fm-ops-datasets"
 storage_path=f"s3://{bucket}/checkpoints/"
 use_gpu = True
-num_workers = 11
-cpus_per_worker = 8
+num_workers = 6
+cpus_per_worker = 16
 block_size = 512
 
 os.environ['CUDA_HOME'] = "/usr/local/cuda/"  # Adjust this path to your CUDA installation
@@ -199,7 +199,7 @@ tokenizer = BatchMapper(tokenize, batch_format="pandas")
 trainer = TransformersTrainer(
     trainer_init_per_worker=trainer_init_per_worker,
     trainer_init_config={
-        "batch_size": 16,  # per device
+        "batch_size": 32,  # per device
         "epochs": 20,
     },
     scaling_config=ScalingConfig(
