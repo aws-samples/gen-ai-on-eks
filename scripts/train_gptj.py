@@ -200,7 +200,7 @@ trainer = TransformersTrainer(
     trainer_init_per_worker=trainer_init_per_worker,
     trainer_init_config={
         "batch_size": 16,  # per device
-        "epochs": 1,
+        "epochs": 20,
     },
     scaling_config=ScalingConfig(
         num_workers=num_workers,
