@@ -199,8 +199,8 @@ tokenizer = BatchMapper(tokenize, batch_format="pandas")
 trainer = TransformersTrainer(
     trainer_init_per_worker=trainer_init_per_worker,
     trainer_init_config={
-        "batch_size": 32,  # per device
-        "epochs": 20,
+        "batch_size": 16,  # per device
+        "epochs": 5,
     },
     scaling_config=ScalingConfig(
         num_workers=num_workers,
