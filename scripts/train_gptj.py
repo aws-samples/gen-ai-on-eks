@@ -97,13 +97,14 @@ def trainer_init_per_worker(train_dataset, eval_dataset=None, **config):
     learning_rate = config.get("learning_rate", 0.00002)
     weight_decay = config.get("weight_decay", 0.01)
 
+    # "fp16": {
+    #         "enabled": "auto",
+    #         "initial_scale_power": 8,
+    #         "min_loss_scale": 1
+    #     },
+    
     deepspeed = {
-        "fp16": {
-            "enabled": False,
-            "initial_scale_power": 8,
-            "min_loss_scale": 1
-        },
-        "bf16": {"enabled": True},
+        "bf16": {"enabled": "true"},
         "optimizer": {
             "type": "AdamW",
             "params": {
