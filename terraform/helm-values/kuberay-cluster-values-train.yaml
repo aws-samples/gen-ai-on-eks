@@ -49,13 +49,13 @@ worker:
   resources:
     limits:
       nvidia.com/gpu: 1
-      cpu: "16"
-      memory: "100Gi"
+      cpu: "12"
+      memory: "50Gi"
       ephemeral-storage: "200Gi"
     requests:
       nvidia.com/gpu: 1
-      cpu: "16"
-      memory: "100Gi"
+      cpu: "8"
+      memory: "50Gi"
       ephemeral-storage: "200Gi"
   annotations:
     prometheus.io/scrape: 'true'
@@ -79,9 +79,9 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "6"
-  minReplicas: "6"
-  maxReplicas: "6"
+  replicas: "11"
+  minReplicas: "11"
+  maxReplicas: "11"
   command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
