@@ -97,14 +97,11 @@ def trainer_init_per_worker(train_dataset, eval_dataset=None, **config):
     learning_rate = config.get("learning_rate", 0.00002)
     weight_decay = config.get("weight_decay", 0.01)
 
-    # "fp16": {
-    #         "enabled": "auto",
-    #         "initial_scale_power": 8,
-    #         "min_loss_scale": 1
-    #     },
-    
     deepspeed = {
-        "bf16": {"enabled": "true"},
+        "fp16": {
+            "enabled": "auto"
+        },
+        "bf16": {"enabled": "auto"},
         "optimizer": {
             "type": "AdamW",
             "params": {
@@ -153,7 +150,7 @@ def trainer_init_per_worker(train_dataset, eval_dataset=None, **config):
         num_train_epochs=epochs,
         push_to_hub=False,
         disable_tqdm=True,  # declutter the output a little
-        fp16=True,
+        bf16 = True,
         gradient_checkpointing=True,
         deepspeed=deepspeed,
     )
