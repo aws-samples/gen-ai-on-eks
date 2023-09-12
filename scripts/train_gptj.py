@@ -101,6 +101,7 @@ def trainer_init_per_worker(train_dataset, eval_dataset=None, **config):
         "fp16": {
             "enabled": "auto",
             "initial_scale_power": 8,
+            "min_loss_scale": 1
         },
         "bf16": {"enabled": "auto"},
         "optimizer": {
