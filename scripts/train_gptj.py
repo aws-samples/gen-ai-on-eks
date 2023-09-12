@@ -99,11 +99,11 @@ def trainer_init_per_worker(train_dataset, eval_dataset=None, **config):
 
     deepspeed = {
         "fp16": {
-            "enabled": "auto",
+            "enabled": False,
             "initial_scale_power": 8,
             "min_loss_scale": 1
         },
-        "bf16": {"enabled": "auto"},
+        "bf16": {"enabled": True},
         "optimizer": {
             "type": "AdamW",
             "params": {
