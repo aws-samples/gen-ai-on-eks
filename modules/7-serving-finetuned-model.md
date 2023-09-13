@@ -17,7 +17,7 @@ cd scripts/
 
 2. **Create a ZIP file** containing the serving script:
 ```bash
-zip 00_serve_gptj_non_finetuned.zip 00_serve_gptj_non_finetuned.py
+zip 01_serve_gptj_shakespeare.zip 01_serve_gptj_shakespeare.py
 ```
 
 #### Step 2: Upload the ZIP File to Amazon S3
@@ -27,7 +27,7 @@ zip 00_serve_gptj_non_finetuned.zip 00_serve_gptj_non_finetuned.py
 Execute the following command to upload the ZIP file to your designated S3 bucket:
 
 ```bash
-aws s3 cp 00_serve_gptj_non_finetuned.zip s3://$BUCKET_NAME/
+aws s3 cp 01_serve_gptj_shakespeare.zip s3://$BUCKET_NAME/
 ```
 
 #### Step 3: Generate a Pre-Signed URL for the ZIP File
@@ -37,7 +37,7 @@ aws s3 cp 00_serve_gptj_non_finetuned.zip s3://$BUCKET_NAME/
 Generate a pre-signed URL that will expire in 1 hour:
 
 ```bash
-export PRESIGNED_URL=$(aws s3 presign s3://$BUCKET_NAME/00_serve_gptj_non_finetuned.zip --expires-in 3600)
+export PRESIGNED_URL_SHAKESPEARE=$(aws s3 presign s3://$BUCKET_NAME/01_serve_gptj_shakespeare.zip --expires-in 3600)
 ```
 
 ### Deploy RayService to Kubernetes Cluster
@@ -168,14 +168,6 @@ Open your web browser and navigate to `http://127.0.0.1:7860` to start interacti
 ![Chat Bot](../static/chat-bot-1.png)
 
 > **Note**: This model does not contain the contextual data of newer Kubernetes releases as it is based on the GPT-2-like GPTJ model, trained on the [Pile](https://pile.eleuther.ai/) dataset.
-
-### Clenup
-
-Let's delete the Ray serve manifest:
-
-```bash
-cd ../ray_serve_manifests && kubectl delete -f 00_ray_serve_non_fine_tuned.yaml
-```
 
 
 

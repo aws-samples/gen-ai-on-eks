@@ -25,7 +25,7 @@ model_name = "EleutherAI/gpt-j-6b"
 bucket = "fm-ops-datasets"
 storage_path=f"s3://{bucket}/checkpoints/"
 use_gpu = True
-num_workers = 8
+num_workers = 11
 cpus_per_worker = 8
 block_size = 512
 
@@ -99,8 +99,7 @@ def trainer_init_per_worker(train_dataset, eval_dataset=None, **config):
 
     deepspeed = {
         "fp16": {
-            "enabled": "auto",
-            "initial_scale_power": 8,
+            "enabled": "auto"
         },
         "bf16": {"enabled": "auto"},
         "optimizer": {
@@ -151,7 +150,7 @@ def trainer_init_per_worker(train_dataset, eval_dataset=None, **config):
         num_train_epochs=epochs,
         push_to_hub=False,
         disable_tqdm=True,  # declutter the output a little
-        fp16=True,
+        bf16 = True,
         gradient_checkpointing=True,
         deepspeed=deepspeed,
     )
@@ -199,8 +198,8 @@ tokenizer = BatchMapper(tokenize, batch_format="pandas")
 trainer = TransformersTrainer(
     trainer_init_per_worker=trainer_init_per_worker,
     trainer_init_config={
-        "batch_size": 8,  # per device
-        "epochs": 1,
+        "batch_size": 16,  # per device
+        "epochs": 5,
     },
     scaling_config=ScalingConfig(
         num_workers=num_workers,

@@ -8,14 +8,14 @@ head:
   enableInTreeAutoscaling: "True"
   resources:
     limits:
-      nvidia.com/gpu: 1
+      # nvidia.com/gpu: 1
       cpu: "12"
-      memory: "55Gi"
+      memory: "16Gi"
       ephemeral-storage: "200Gi"
     requests:
-      nvidia.com/gpu: 1
+      # nvidia.com/gpu: 1
       cpu: "12"
-      memory: "55Gi"
+      memory: "16Gi"
       ephemeral-storage: "200Gi"
   volumes:
     - name: log-volume
@@ -32,13 +32,13 @@ head:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
-  nodeSelector:
-    NodeGroupType: gpu-train # This is used to forcefully scale Karpenter specific provisioner for train
-  tolerations:
-    - key: "nvidia.com/gpu"
-      operator: "Exists"
-      effect: "NoSchedule"
-  command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
+  # nodeSelector:
+  #   NodeGroupType: gpu-train # This is used to forcefully scale Karpenter specific provisioner for train
+  # tolerations:
+  #   - key: "nvidia.com/gpu"
+  #     operator: "Exists"
+  #     effect: "NoSchedule"
+  # command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
@@ -50,19 +50,19 @@ worker:
     limits:
       nvidia.com/gpu: 1
       cpu: "12"
-      memory: "55Gi"
+      memory: "50Gi"
       ephemeral-storage: "200Gi"
     requests:
       nvidia.com/gpu: 1
       cpu: "8"
-      memory: "55Gi"
+      memory: "50Gi"
       ephemeral-storage: "200Gi"
   annotations:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
   nodeSelector:
-    NodeGroupType: gpu-train # This is used to forcefully scale Karpenter specific provisioner for train
+    provisioner: gpu-train # This is used to forcefully scale Karpenter specific provisioner for train
   tolerations:
     - key: "nvidia.com/gpu"
       operator: "Exists"
@@ -79,9 +79,9 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "4"
-  minReplicas: "4"
-  maxReplicas: "10"
+  replicas: "11"
+  minReplicas: "11"
+  maxReplicas: "11"
   command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR

@@ -131,7 +131,7 @@ You're now ready to proceed with the demonstration.
 
 The demonstration is broken down into several key modules, each focusing on a specific aspect of fine-tuning Foundation Models like GPTJ on Amazon EKS. By the end of this demonstration, you'll have an end-to-end example showcasing the versatility and power of EKS for AI/ML workloads.
 
-### [1. Serving a Non Fine-Tuned Model with Ray](./modules/1-serving-non-finetuned-model.md)
+### [1. Serving a Non Fine-Tuned Model on Ray with RayOperator](./modules/1-serving-non-finetuned-model.md)
 
 In this module, you'll learn how to deploy a generic, non-fine-tuned GPTJ model using Ray Serve. This sets the stage for comparison with a fine-tuned model later in the demo.
 

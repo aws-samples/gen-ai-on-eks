@@ -7,24 +7,24 @@ from ray import serve
 from starlette.requests import Request
 
 
-ray.init(
-    address="auto",
-    namespace="serve",
-    runtime_env={
-        "pip": [
-            "datasets",
-            "evaluate",
-            # Latest combination of accelerate==0.19.0 and transformers==4.29.0
-            # seems to have issues with DeepSpeed process group initialization,
-            # and will result in a batch_size validation problem.
-            # TODO(jungong) : get rid of the pins once the issue is fixed.
-            "accelerate==0.20.3",
-            "transformers==4.26.0",
-            "torch>=1.12.0",
-            "torch"
-        ]
-    }
-)
+# ray.init(
+#     address="auto",
+#     namespace="serve",
+#     runtime_env={
+#         "pip": [
+#             "datasets",
+#             "evaluate",
+#             # Latest combination of accelerate==0.19.0 and transformers==4.29.0
+#             # seems to have issues with DeepSpeed process group initialization,
+#             # and will result in a batch_size validation problem.
+#             # TODO(jungong) : get rid of the pins once the issue is fixed.
+#             "accelerate==0.20.3",
+#             "transformers==4.26.0",
+#             "torch>=1.12.0",
+#             "torch"
+#         ]
+#     }
+# )
 
 @serve.deployment(ray_actor_options={"num_gpus": 1})
 class PredictDeployment:
@@ -89,5 +89,5 @@ class PredictDeployment:
 
 # Deploy
 model_dir = "local_model"
-deployment = PredictDeployment.bind(model_id=model_dir)
-serve.run(deployment)
+deployment_gptj_finetuned_shakespeare = PredictDeployment.bind(model_id=model_dir)
+# serve.run(deployment)
