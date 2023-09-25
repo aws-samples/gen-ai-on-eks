@@ -17,7 +17,7 @@ spec:
       values: ["g5"]
     - key: "karpenter.k8s.aws/instance-size"
       operator: In
-      values: ["2xlarge", "4xlarge", "8xlarge"]
+      values: ["2xlarge", "4xlarge"]
   providerRef:
     name: gpu-train
   labels:
