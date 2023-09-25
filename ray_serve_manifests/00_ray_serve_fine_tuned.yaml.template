@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ray-svc-non-finetuned
+  name: ray-svc-finetuned
 ---
 apiVersion: ray.io/v1alpha1
 kind: RayService
 metadata:
-  name: ray-svc-non-finetuned
-  namespace: ray-svc-non-finetuned
+  name: ray-svc-finetuned
+  namespace: ray-svc-finetuned
 spec:
   serviceUnhealthySecondThreshold: 900 # Config for the health check threshold for Ray Serve applications. Default value is 900.
   deploymentUnhealthySecondThreshold: 300 # Config for the health check threshold for Ray dashboard agent. Default value is 300.
@@ -67,7 +67,7 @@ spec:
                 path: /tmp/
           containers:
             - name: ray-head
-              image: rayproject/ray-ml:latest-gpu
+              image: rayproject/ray-ml:2.6.3.54de39-py38-gpu
               command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
               resources:
                 limits:
