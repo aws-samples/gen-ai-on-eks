@@ -6,13 +6,7 @@ In this module, we will walk through the steps required to deploy a Ray service 
 
 ### Deploy RayService to Kubernetes Cluster
 
-#### Step 1: Exporting the pre-signed URL to environment variable
-
-```bash
-export PRESIGNED_URL="<URL GENERATED IN JUPYTER NOTEBOOK>"
-```
-
-#### Step 2: Update the `working_dir` in RayService Manifest
+#### Step 1: Update the `working_dir` in RayService Manifest
 
 **Objective**: To provide the Ray service with the location from which it should fetch the serving script.
 
@@ -34,7 +28,7 @@ serveConfigV2: |
           working_dir: "PASTE YOUR PREVIOUSLY GENERATED PRESIGNED URL HERE"
 ```
 
-#### Step 3: Deploy the RayService
+#### Step 2: Deploy the RayService
 
 Apply the updated YAML manifest to deploy the Ray service:
 
