@@ -53,12 +53,12 @@ spec:
       #pod template
       template:
         spec:
-          nodeSelector:
-            provisioner: gpu-serve # This is used to forcefully scale Karpenter specific provisioner for serve
-          tolerations:
-            - key: "nvidia.com/gpu"
-              operator: "Exists"
-              effect: "NoSchedule"
+          # nodeSelector:
+          #   provisioner: gpu-serve # This is used to forcefully scale Karpenter specific provisioner for serve
+          # tolerations:
+          #   - key: "nvidia.com/gpu"
+          #     operator: "Exists"
+          #     effect: "NoSchedule"
           volumes:
             - name: log-volume
               emptyDir: {}
@@ -67,24 +67,24 @@ spec:
                 path: /tmp/
           containers:
             - name: ray-head
-              image: rayproject/ray-ml:2.6.3.54de39-py38-gpu
-              command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
+              image: rayproject/ray-ml:2.6.3.54de39-py38-cpu
+              # command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
               resources:
                 limits:
-                  nvidia.com/gpu: 1
+                  # nvidia.com/gpu: 1
                   cpu: "12"
-                  memory: "55Gi"
+                  memory: "16Gi"
                   ephemeral-storage: "200Gi"
                 requests:
-                  nvidia.com/gpu: 1
+                  # nvidia.com/gpu: 1
                   cpu: "12"
-                  memory: "55Gi"
+                  memory: "16Gi"
                   ephemeral-storage: "200Gi"
               env:
                 - name: RAY_LOG_TO_STDERR
                   value: "1"
-                - name: CUDA_HOME
-                  value: "/usr/local/cuda"
+                # - name: CUDA_HOME
+                #   value: "/usr/local/cuda"
               volumeMounts:
                 - mountPath: /tmp/ray
                   name: log-volume
@@ -127,7 +127,7 @@ spec:
                   path: /tmp/
             containers:
               - name: ray-worker # must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character (e.g. 'my-name',  or '123-abc'
-                image: rayproject/ray:2.6.3
+                image: rayproject/ray-ml:2.6.3.54de39-py38-gpu
                 lifecycle:
                   preStop:
                     exec:
@@ -137,12 +137,12 @@ spec:
                   limits:
                     nvidia.com/gpu: 1
                     cpu: "12"
-                    memory: "55Gi"
+                    memory: "50Gi"
                     ephemeral-storage: "200Gi"
                   requests:
                     nvidia.com/gpu: 1
                     cpu: "8"
-                    memory: "55Gi"
+                    memory: "50Gi"
                     ephemeral-storage: "200Gi"
                 volumeMounts:
                 - mountPath: /tmp/ray

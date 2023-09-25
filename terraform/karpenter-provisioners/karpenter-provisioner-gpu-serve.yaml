@@ -14,7 +14,7 @@ spec:
       values: [ "on-demand" ]
     - key: "karpenter.k8s.aws/instance-family"
       operator: In
-      values: ["p3"]
+      values: ["g5"]
     - key: "karpenter.k8s.aws/instance-size"
       operator: In
       values: ["2xlarge", "4xlarge", "8xlarge"]

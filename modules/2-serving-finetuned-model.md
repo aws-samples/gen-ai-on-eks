@@ -74,7 +74,7 @@ kubectl get po -n ray-svc-finetuned -w
 To ensure that the service exposing our non-fine-tuned model is active and running, execute the following command:
 
 ```bash
-kubectl get svc -n ray-svc-non-finetuned
+kubectl get svc -n ray-svc-finetuned
 ```
 
 **Expected Output**:
