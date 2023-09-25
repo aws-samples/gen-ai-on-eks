@@ -1,13 +1,13 @@
 terraform {
   backend "s3" {
-    bucket = "fm-ops-tf-state-shagsahjs" # Replace during install.sh
+    bucket = "TERRAFORM_STATE_BUCKET" # Replace during install.sh
     key    = "fm-ops-demo/fm-ops-demo.json"
-    region = "us-west-2" # Replace during install.sh
+    region = "AWS_REGION" # Replace during install.sh
   }
 }
 
 provider "aws" {
-  region = "us-west-2"
+  region = "AWS_REGION"
 }
 
 # ECR always authenticates with `us-east-1` region
