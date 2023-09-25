@@ -3,14 +3,15 @@ proxy:
     enabled: false
     type: offload
   service:
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
-      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
-      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-      service.beta.kubernetes.io/aws-load-balancer-type: external
-      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
-      service.beta.kubernetes.io/aws-load-balancer-ip-address-type: ipv4
+    type: ClusterIP
+    # annotations:
+    #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+    #   service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+    #   service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    #   service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    #   service.beta.kubernetes.io/aws-load-balancer-type: external
+    #   service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
+    #   service.beta.kubernetes.io/aws-load-balancer-ip-address-type: ipv4
 singleuser:
   profileList: # Enable GPU accelerator for every user
     - display_name: "GPU Server"
@@ -18,7 +19,6 @@ singleuser:
       kubespawner_override:
         extra_resource_limits:
           nvidia.com/gpu: "1" # TIME-SLICING: Use a slice of GPU using time-slicing mode
-          # nvidia.com/mig-1g.5gb: 1 # NVIDIA MIG: Use this config with MIG instead
   image:
     name: jupyter/datascience-notebook # Base image with GPU drivers available
     tag: python-3.8.8
