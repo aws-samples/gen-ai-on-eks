@@ -1,0 +1,90 @@
+# Ray cluster installed using Helm Charts
+image:
+  repository: rayproject/ray-ml
+  tag: "2.6.3.54de39-py38-gpu"
+  pullPolicy: IfNotPresent
+
+head:
+  enableInTreeAutoscaling: "True"
+  resources:
+    limits:
+      # nvidia.com/gpu: 1
+      cpu: "12"
+      memory: "16Gi"
+      ephemeral-storage: "200Gi"
+    requests:
+      # nvidia.com/gpu: 1
+      cpu: "12"
+      memory: "16Gi"
+      ephemeral-storage: "200Gi"
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+    - name: ray-job-volume # TBD: Dont know if there is a need of this volume here
+      hostPath:
+        path: /tmp/
+  volumeMounts:
+    - mountPath: /tmp/ray
+      name: log-volume
+    - mountPath: /mnt/cluster_storage
+      name: ray-job-volume
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: '8080'
+  # nodeSelector:
+  #   NodeGroupType: gpu-train # This is used to forcefully scale Karpenter specific provisioner for train
+  # tolerations:
+  #   - key: "nvidia.com/gpu"
+  #     operator: "Exists"
+  #     effect: "NoSchedule"
+  # command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
+  containerEnv:
+    - name: RAY_LOG_TO_STDERR
+      value: "1"
+    - name: CUDA_HOME
+      values: "/usr/local/cuda"
+
+worker:
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+      cpu: "12"
+      memory: "50Gi"
+      ephemeral-storage: "200Gi"
+    requests:
+      nvidia.com/gpu: 1
+      cpu: "8"
+      memory: "50Gi"
+      ephemeral-storage: "200Gi"
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: '8080'
+  nodeSelector:
+    provisioner: gpu-train # This is used to forcefully scale Karpenter specific provisioner for train
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+    - name: ray-job-volume
+      hostPath: # This volume is used for training jobs in the instance
+        path: /tmp/
+  # Ray writes logs to /tmp/ray/session_latests/logs
+  volumeMounts:
+    - mountPath: /tmp/ray
+      name: log-volume
+    - mountPath: /mnt/cluster_storage
+      name: ray-job-volume
+  replicas: "10"
+  minReplicas: "10"
+  maxReplicas: "10"
+  command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
+  containerEnv:
+    - name: RAY_LOG_TO_STDERR
+      value: "1"
+    - name: CUDA_HOME
+      values: "/usr/local/cuda"
