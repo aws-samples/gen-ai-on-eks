@@ -1,7 +1,7 @@
 # Ray cluster installed using Helm Charts
 image:
   repository: rayproject/ray-ml
-  tag: "latest-gpu"
+  tag: "2.6.3.54de39-py38-gpu"
   pullPolicy: IfNotPresent
 
 head:

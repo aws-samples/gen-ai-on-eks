@@ -4,45 +4,15 @@
 
 In this module, we will walk through the steps required to deploy a Ray service that utilizes a non fine-tuned model. The code for this model will be zipped and uploaded to an Amazon S3 bucket. Subsequently, we will deploy a Ray service in a Kubernetes cluster, configured to pull this code using a pre-signed URL.
 
-### Create Zip File from Training Code and Upload to Amazon S3
-
-#### Step 1: Create the ZIP File
-
-**Objective**: To package our model's serving script for uploading to Amazon S3.
-
-1. **Navigate to the root directory**:
-```bash
-cd scripts/
-```
-
-2. **Create a ZIP file** containing the serving script:
-```bash
-zip 01_serve_gptj_shakespeare.zip 01_serve_gptj_shakespeare.py
-```
-
-#### Step 2: Upload the ZIP File to Amazon S3
-
-**Objective**: To upload the packaged model script to a secure S3 bucket.
-
-Execute the following command to upload the ZIP file to your designated S3 bucket:
-
-```bash
-aws s3 cp 01_serve_gptj_shakespeare.zip s3://$BUCKET_NAME/
-```
-
-#### Step 3: Generate a Pre-Signed URL for the ZIP File
-
-**Objective**: To generate a secure, time-limited URL for accessing the uploaded ZIP file.
-
-Generate a pre-signed URL that will expire in 1 hour:
-
-```bash
-export PRESIGNED_URL_SHAKESPEARE=$(aws s3 presign s3://$BUCKET_NAME/01_serve_gptj_shakespeare.zip --expires-in 3600)
-```
-
 ### Deploy RayService to Kubernetes Cluster
 
-#### Step 1: Update the `working_dir` in RayService Manifest
+#### Step 1: Exporting the pre-signed URL to environment variable
+
+```bash
+export PRESIGNED_URL="<URL GENERATED IN JUPYTER NOTEBOOK>"
+```
+
+#### Step 2: Update the `working_dir` in RayService Manifest
 
 **Objective**: To provide the Ray service with the location from which it should fetch the serving script.
 
@@ -58,7 +28,7 @@ cd ../ray_serve_manifests
 envsubst < 00_ray_serve_non_fine_tuned.yaml.template > 00_ray_serve_non_fine_tuned.yaml
 ```
 
-#### Step 2: Deploy the RayService
+#### Step 3: Deploy the RayService
 
 Apply the updated YAML manifest to deploy the Ray service:
 

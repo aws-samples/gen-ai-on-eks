@@ -15,19 +15,24 @@ spec:
   # Only one of serveConfig and serveConfigV2 should be used.
   serveConfigV2: |
     applications:
-      - name: gptj_non_finetuned
-        import_path: 00_serve_gptj_non_finetuned.deployment_gptj_non_finetuned 
-        route_prefix: /gptj_non_finetuned
+      - name: falcon_finetuned_financial_data
+        import_path: serve_script.deployment_finetuned 
+        route_prefix: /falcon_finetuned_financial
         runtime_env:
           working_dir: "${PRESIGNED_URL}"
-          pip: 
-            - transformers==4.26.0
-            - torch>=1.12.0
-            - datasets
-            - evaluate
-            - accelerate==0.20.3
-            - transformers==4.26.0
-            - torch>=1.12.0
+          pip:
+            - awscli
+            - datasets==2.14.5
+            - evaluate==0.4.0
+            - einops==0.6.1
+            - accelerate==0.23.0
+            - transformers==4.33.1
+            - torch==2.0.1
+            - deepspeed==0.9.3
+            - peft==0.4.0
+            - bitsandbytes==0.41.1
+            - loralib==0.1.2
+            - xformers==0.0.21
         deployments:
           - name: PredictDeployment
             num_replicas: 1
