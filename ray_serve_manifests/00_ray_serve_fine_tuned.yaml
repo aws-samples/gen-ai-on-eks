@@ -19,7 +19,7 @@ spec:
         import_path: serve_script.deployment_finetuned 
         route_prefix: /falcon_finetuned_financial
         runtime_env:
-          working_dir: "${PRESIGNED_URL}"
+          working_dir: "PASTE YOUR PREVIOUSLY GENERATED PRESIGNED URL HERE"
           pip:
             - awscli
             - datasets==2.14.5

@@ -22,10 +22,16 @@ export PRESIGNED_URL="<URL GENERATED IN JUPYTER NOTEBOOK>"
 cd ray_serve_manifests
 ```
 
-2. Update the `working_dir` using `envsubst` command that is compatible with both macOS and Linux:
+2. Update the `working_dir` with the previously generated Presigned URLand save it:
 
-```bash
-envsubst < 00_ray_serve_fine_tuned.yaml.template > 00_ray_serve_fine_tuned.yaml
+```yaml
+serveConfigV2: |
+    applications:
+      - name: falcon_finetuned_financial_data
+        import_path: serve_script.deployment_finetuned 
+        route_prefix: /falcon_finetuned_financial
+        runtime_env:
+          working_dir: "PASTE YOUR PREVIOUSLY GENERATED PRESIGNED URL HERE"
 ```
 
 #### Step 3: Deploy the RayService

@@ -5,7 +5,6 @@
 # Local .terraform directories
 **/.terraform/*
 .env/
-00_ray_serve_fine_tuned.yaml
 # .tfstate files
 *.tfstate
 *.tfstate.*
