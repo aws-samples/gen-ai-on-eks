@@ -34,7 +34,7 @@ Once you have your `Terminal` opened, execute the below script to download the n
 
 <!-- TBD: Change here to URL from aws-samples -->
 ```bash
-wget https://raw.githubusercontent.com/lusoal/fm-ops-eks/main/notebooks/llm_train_serve.ipynb
+wget https://raw.githubusercontent.com/aws-samples/gen-ai-on-eks/main/notebooks/llm_train_serve.ipynb
 ```
 
 ![ML Ops Arch Diagram](../static/terminal-download.png)
