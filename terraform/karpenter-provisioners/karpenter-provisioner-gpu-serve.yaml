@@ -1,0 +1,57 @@
+# NOTE: Ubuntu 20.04 LTS is not supported by Karpenter yet. So, we are using Ubuntu 18.04 LTS
+---
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: gpu-serve
+  namespace: karpenter
+spec:
+  kubeletConfiguration:
+    containerRuntime: containerd
+  requirements:
+    - key: "karpenter.sh/capacity-type"
+      operator: In
+      values: [ "on-demand" ]
+    - key: "karpenter.k8s.aws/instance-family"
+      operator: In
+      values: ["g5"]
+    - key: "karpenter.k8s.aws/instance-size"
+      operator: In
+      values: ["2xlarge", "4xlarge", "8xlarge"]
+  providerRef:
+    name: gpu-serve
+  labels:
+    type: karpenter
+    provisioner: gpu-serve
+    NodeGroupType: gpu-serve
+  taints:
+    - key: nvidia.com/gpu
+      effect: "NoSchedule"
+  ttlSecondsAfterEmpty: 120 # optional, but never scales down if not set
+
+---
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeTemplate
+metadata:
+  name: gpu-serve
+  namespace: karpenter
+spec:
+  amiFamily: Ubuntu
+  blockDeviceMappings:
+    - deviceName: /dev/sda1
+      ebs:
+        volumeSize: 1000Gi
+        volumeType: gp3
+        encrypted: true
+  metadataOptions:
+    httpEndpoint: enabled
+    httpProtocolIPv6: disabled
+    httpPutResponseHopLimit: 2
+    httpTokens: required
+  subnetSelector:
+    karpenter.sh/discovery: fmops-cluster     # Name of the Subnets to spin up the nodes
+  securityGroupSelector:                      # required, when not using launchTemplate
+    karpenter.sh/discovery: fmops-cluster     # name of the SecurityGroup to be used with Nodes
+  tags:
+    InstanceType: "gpu"
+    Name: "gpu-serve"  # optional, add tags for your own use

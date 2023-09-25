@@ -1,0 +1,93 @@
+import os
+import boto3
+import ray
+import pandas as pd
+
+from ray import serve
+from starlette.requests import Request
+
+
+# ray.init(
+#     address="auto",
+#     namespace="serve",
+#     runtime_env={
+#         "pip": [
+#             "datasets",
+#             "evaluate",
+#             # Latest combination of accelerate==0.19.0 and transformers==4.29.0
+#             # seems to have issues with DeepSpeed process group initialization,
+#             # and will result in a batch_size validation problem.
+#             # TODO(jungong) : get rid of the pins once the issue is fixed.
+#             "accelerate==0.20.3",
+#             "transformers==4.26.0",
+#             "torch>=1.12.0",
+#             "torch"
+#         ]
+#     }
+# )
+
+@serve.deployment(ray_actor_options={"num_gpus": 1})
+class PredictDeployment:
+    def __init__(self, model_id: str, revision: str = None):
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        import torch
+        
+        print("Downloading model and tokenizer from S3")
+        # Create folder for custmo model and tokenizer
+        local_dir = "local_model"
+        os.makedirs(local_dir, exist_ok=True)
+        
+        # Initialize S3 client
+        s3 = boto3.client("s3")
+        bucket = "fm-ops-datasets"
+        model_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTrainer_f638a_00000_0_2023-09-05_12-25-24/checkpoint_000000/pytorch_model.bin"
+        tokenizer_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTrainer_f638a_00000_0_2023-09-05_12-25-24/checkpoint_000000/tokenizer.json"
+        config_key = "checkpoints/TransformersTrainer_2023-09-05_12-25-24/TransformersTrainer_f638a_00000_0_2023-09-05_12-25-24/checkpoint_000000/config.json"
+
+        s3.download_file(bucket, model_key, "local_model/pytorch_model.bin")
+        s3.download_file(bucket, tokenizer_key, "local_model/tokenizer.json")
+        s3.download_file(bucket, config_key, "local_model/config.json")
+        
+        print("Model and tokenizer downloaded")
+        
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            revision=revision,
+            torch_dtype=torch.float16,
+            low_cpu_mem_usage=True
+        ).cuda()
+        
+        self.tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+    def generate(self, text: str) -> pd.DataFrame:
+        input_ids = self.tokenizer(text, return_tensors="pt").input_ids.to(
+            self.model.device
+        )
+
+        gen_tokens = self.model.generate(
+            input_ids,
+            do_sample=True,
+            temperature=0.9,
+            min_length=32,
+            max_length=128,
+        )
+        
+        return pd.DataFrame(
+            self.tokenizer.batch_decode(gen_tokens), columns=["responses"]
+        )
+
+    async def __call__(self, http_request: Request) -> str:
+        json_request: str = await http_request.json()
+        prompts = []
+        for prompt in json_request:
+            text = prompt["text"]
+            if isinstance(text, list):
+                prompts.extend(text)
+            else:
+                prompts.append(text)
+        return self.generate(prompts)
+
+# Deploy
+model_dir = "local_model"
+deployment_gptj_finetuned_shakespeare = PredictDeployment.bind(model_id=model_dir)
+# serve.run(deployment)
