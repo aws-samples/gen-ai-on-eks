@@ -13,7 +13,7 @@ variable "name" {
 }
 
 variable "aws_region" {
-  default = "us-west-2"
+  default = "AWS_REGION"
 }
 
 variable "cluster_version" {

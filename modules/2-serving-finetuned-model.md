@@ -135,10 +135,10 @@ python app.py
 
 Open your web browser and navigate to `http://127.0.0.1:7860` to start interacting with your deployed model.
 
-![Chat Bot](../static/chat-bot-1.png)
+Let's ask the same question that we asked for the non-finetuned model
 
-> **Note**: This model does not contain the contextual data of newer Kubernetes releases as it is based on the GPT-2-like GPTJ model, trained on the [Pile](https://pile.eleuther.ai/) dataset.
+**Question:** Why do I need an emergency fund if I already have investments?
 
-
+![Chat Bot](../static/chatbot-1.png)
 
 
