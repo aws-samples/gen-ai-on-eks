@@ -25,44 +25,15 @@ aws iam create-service-linked-role --aws-service-name spot.amazonaws.com
 
 ## Environment Setup
 
-### Initialize Global Variables
+### Update aws_region var in vars.tf
 
-```bash
-export TERRAFORM_STATE_BUCKET="<DEFINE A NAME FOR YOUR STATE BUCKET>"
-export AWS_REGION="<DEFINE YOUR AWS REGION>"
-```
-
-### Create S3 Bucket for Terraform State
-
-```bash
-aws s3 mb s3://$TERRAFORM_STATE_BUCKET --region $AWS_REGION
-```
-
-### Update Terraform Configuration Files
-
-Navigate to the [`terraform/`](terraform/) directory and update `providers.tf` and `vars.tf`:
-
-#### `providers.tf`
-
-```hcl
-terraform {
-  backend "s3" {
-    bucket = "TERRAFORM_STATE_BUCKET" # REPLACE HERE
-    key    = "fm-ops-demo/fm-ops-demo.json"
-    region = "AWS_REGION"              # REPLACE HERE
-  }
-}
-
-provider "aws" {
-  region = "AWS_REGION"               # REPLACE HERE
-}
-```
-
-#### `vars.tf`
+Navigate to the [`terraform/`](terraform/) directory and update `vars.tf`:
 
 ```hcl
 variable "aws_region" {
-  default = "AWS_REGION"              # REPLACE HERE
+  description = "Region"
+  type        = string
+  default     = "us-west-2" # Update here to your desired region
 }
 ```
 
