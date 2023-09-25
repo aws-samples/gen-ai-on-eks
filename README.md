@@ -88,6 +88,9 @@ Since we will be pushing code to Amazon S3 let's export the `BUCKET_NAME`
 ```bash
 export BUCKET_NAME=$(terraform output -raw bucket_name)
 ```
+
+> Have this bucket name handy, we will use it troughout the demo
+
 ### Update Kubeconfig
 
 ```bash
