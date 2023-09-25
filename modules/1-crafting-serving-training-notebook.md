@@ -43,5 +43,7 @@ Now go back to the previous screen, and open the Notebook:
 
 ![ML Ops Arch Diagram](../static/notebook1.png)
 
+Now you can follow the steps on Jupyter Notebook.
+
 
 

@@ -79,8 +79,8 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "11"
-  minReplicas: "11"
+  replicas: "1"
+  minReplicas: "1"
   maxReplicas: "11"
   command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
   containerEnv:
