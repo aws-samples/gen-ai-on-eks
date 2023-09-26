@@ -12,7 +12,7 @@ Exposing JupyterHub endpoint:
 kubectl port-forward svc/proxy-public 8080:80 -n jupyterhub
 ```
 
-> You can choose any port that you'd like (local-port):(service-port)
+> You can choose any port that you'd like (local-port):(service-port). In the above example we are using `8080`, so open the `https://localhost:8080` in your local browser.
 
 Since we are using JupyterHub `dummy` auth mechanism, we can define **any user and password** in-order to get access to Jupyter Console:
 
@@ -32,14 +32,13 @@ We already have developed a Jupyter Notebook with the steps to craft a train and
 
 Once you have your `Terminal` opened, execute the below script to download the notebook:
 
-<!-- TBD: Change here to URL from aws-samples -->
 ```bash
 wget https://raw.githubusercontent.com/aws-samples/gen-ai-on-eks/main/notebooks/llm_train_serve.ipynb
 ```
 
 ![ML Ops Arch Diagram](../static/terminal-download.png)
 
-Now go back to the previous screen, and open the Notebook:
+Now go back to the previous screen, by clicking on the JupyterHub logo in the top left corner, and open the Notebook:
 
 ![ML Ops Arch Diagram](../static/notebook1.png)
 

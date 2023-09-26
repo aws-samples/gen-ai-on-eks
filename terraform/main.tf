@@ -1,6 +1,6 @@
 locals {
   name       = var.name
-  region     = try(var.aws_region, data.aws_region.current.name)
+  region     = coalesce(var.aws_region, data.aws_region.current.name)
   account_id = data.aws_caller_identity.current.account_id
   partition  = data.aws_partition.current.partition
 

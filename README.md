@@ -67,7 +67,7 @@ export BUCKET_NAME=$(terraform output -raw bucket_name)
 ### Update Kubeconfig
 
 ```bash
-aws eks update-kubeconfig --region $AWS_REGION --name fmops-cluster
+terraform output -raw configure_kubectl | bash
 ```
 
 ### Validate Cluster Setup
@@ -80,12 +80,19 @@ You should see output similar to:
 
 ```bash
 NAME                                        STATUS   ROLES    AGE     VERSION
-ip-10-8-11-154.us-west-2.compute.internal   Ready    <none>   21d     v1.27.3-eks-a5565ad
-ip-10-8-20-67.us-west-2.compute.internal    Ready    <none>   2d22h   v1.27.4-eks-8ccc7ba
-ip-10-8-22-144.us-west-2.compute.internal   Ready    <none>   60m     v1.27.3
-ip-10-8-23-25.us-west-2.compute.internal    Ready    <none>   67m     v1.27.3
-ip-10-8-23-84.us-west-2.compute.internal    Ready    <none>   70m     v1.27.3
-... additional nodes
+ip-10-8-10-118.us-west-2.compute.internal   Ready    <none>   50m   v1.27.5-eks-43840fb
+ip-10-8-17-213.us-west-2.compute.internal   Ready    <none>   51m   v1.27.5
+ip-10-8-17-85.us-west-2.compute.internal    Ready    <none>   51m   v1.27.5
+ip-10-8-21-138.us-west-2.compute.internal   Ready    <none>   51m   v1.27.5
+ip-10-8-22-37.us-west-2.compute.internal    Ready    <none>   51m   v1.27.5
+ip-10-8-30-194.us-west-2.compute.internal   Ready    <none>   22m   v1.27.5-eks-43840fb
+ip-10-8-32-55.us-west-2.compute.internal    Ready    <none>   24m   v1.27.5-eks-43840fb
+```
+
+Validade if all Pods are `Running` and in `Ready` state.
+
+```bash
+kubectl get pods -A
 ```
 
 You're now ready to proceed with the demonstration.
