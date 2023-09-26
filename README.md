@@ -25,18 +25,6 @@ aws iam create-service-linked-role --aws-service-name spot.amazonaws.com
 
 ## Environment Setup
 
-### Update aws_region var in vars.tf
-
-Navigate to the [`terraform/`](terraform/) directory and update `vars.tf`:
-
-```hcl
-variable "aws_region" {
-  description = "Region"
-  type        = string
-  default     = "us-west-2" # Update here to your desired region
-}
-```
-
 ### Apply Terraform Script
 
 ```bash

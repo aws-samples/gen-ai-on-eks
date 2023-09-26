@@ -38,7 +38,7 @@ wget https://raw.githubusercontent.com/aws-samples/gen-ai-on-eks/main/notebooks/
 
 ![ML Ops Arch Diagram](../static/terminal-download.png)
 
-Now go back to the previous screen, by clicking on the JupyterHub logo in the top left corner, and open the Notebook:
+Now go back to the previous screen, by returning to the pevious browsar tab, or clicking on the JupyterHub logo in the top left corner, and open the Notebook:
 
 ![ML Ops Arch Diagram](../static/notebook1.png)
 
