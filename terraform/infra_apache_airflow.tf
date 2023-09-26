@@ -135,7 +135,7 @@ data "aws_iam_policy_document" "airflow_s3_logs" {
   statement {
     sid       = ""
     effect    = "Allow"
-    resources = ["arn:${data.aws_partition.current.partition}:s3:::${module.airflow_s3_bucket.s3_bucket_id}"]
+    resources = ["arn:${local.partition}:s3:::${module.airflow_s3_bucket.s3_bucket_id}"]
 
     actions = [
       "s3:ListBucket"
@@ -144,7 +144,7 @@ data "aws_iam_policy_document" "airflow_s3_logs" {
   statement {
     sid       = ""
     effect    = "Allow"
-    resources = ["arn:${data.aws_partition.current.partition}:s3:::${module.airflow_s3_bucket.s3_bucket_id}/*"]
+    resources = ["arn:${local.partition}:s3:::${module.airflow_s3_bucket.s3_bucket_id}/*"]
 
     actions = [
       "s3:GetObject",

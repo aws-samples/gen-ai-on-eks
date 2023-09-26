@@ -1,3 +1,9 @@
+variable "aws_region" {
+  description = "AWS Region."
+  type        = string
+  default     = null
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the VPC to be created."
   type        = string
@@ -16,12 +22,6 @@ variable "name" {
   default     = "fmops-cluster"
 }
 
-variable "aws_region" {
-  description = "AWS Region"
-  type        = string
-  default     = "us-west-2"
-}
-
 variable "cluster_version" {
   description = "Amazon EKS Cluster version."
   type        = string
@@ -29,13 +29,13 @@ variable "cluster_version" {
 }
 
 variable "jupyter_hub_values_path" {
-  description = "Path for JupyterHub Helm values file"
+  description = "Path for JupyterHub Helm values file."
   type        = string
   default     = "helm-values/jupyterhub-values.yaml"
 }
 
 variable "kuberay_cluster_train_values_path" {
-  description = "Path for KubeRay Helm values file"
+  description = "Path for KubeRay Helm values file."
   type        = string
   default     = "helm-values/kuberay-cluster-values-train.yaml"
 }
@@ -43,7 +43,7 @@ variable "kuberay_cluster_train_values_path" {
 # NVIDIA Operator
 
 variable "nvidia_gpu_values_path" {
-  description = "Path for NVidia GPU operator Helm values file"
+  description = "Path for NVidia GPU operator Helm values file."
   type        = string
   default     = "helm-values/gpu-operator-values-ubuntu.yaml"
 }
@@ -57,7 +57,7 @@ variable "airflow_name" {
 }
 
 variable "apache_airflow_values_path" {
-  description = "Path for Apache Airflow Helm values file"
+  description = "Path for Apache Airflow Helm values file."
   type        = string
   default     = "helm-values/airflow-values.yaml"
 }

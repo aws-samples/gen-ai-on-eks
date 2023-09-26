@@ -1,15 +1,21 @@
 locals {
-  name   = var.name
-  region = var.aws_region
+  name       = var.name
+  region     = try(var.aws_region, data.aws_region.current.name)
+  account_id = data.aws_caller_identity.current.account_id
+  partition  = data.aws_partition.current.partition
 
   vpc_cidr = var.vpc_cidr
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 
   tags = {
-    Blueprint  = var.name
-    GithubRepo = "github.com/aws-ia/terraform-aws-eks-blueprints"
+    Sample     = var.name
+    GithubRepo = "github.com/aws-samples/gen-ai-on-eks"
   }
 }
+
+data "aws_region" "current" {}
+
+data "aws_caller_identity" "current" {}
 
 data "aws_availability_zones" "available" {}
 
