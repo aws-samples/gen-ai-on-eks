@@ -11,6 +11,14 @@ locals {
   }
 }
 
+data "aws_availability_zones" "available" {}
+
+data "aws_partition" "current" {}
+
+data "aws_ecrpublic_authorization_token" "token" {
+  provider = aws.ecr
+}
+
 ################################################################################
 # Supporting Resources
 ################################################################################
@@ -48,7 +56,8 @@ module "vpc" {
 
 # Role needed for EBS CSI Driver
 module "ebs_csi_irsa_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.30"
 
   role_name = "ebs-csi-fmops"
 
@@ -64,7 +73,7 @@ module "ebs_csi_irsa_role" {
 
 
 ################################################################################
-# Cluster
+# EKS Cluster
 ################################################################################
 
 module "eks" {

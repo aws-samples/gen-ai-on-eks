@@ -1,6 +1,6 @@
-#---------------------------------------------------------------
+################################################################################
 # Self-Managed Apache Airflow
-#---------------------------------------------------------------
+################################################################################
 resource "random_password" "postgres" {
   length  = 16
   special = false
@@ -15,7 +15,6 @@ resource "aws_secretsmanager_secret_version" "postgres" {
   secret_id     = aws_secretsmanager_secret.postgres.id
   secret_string = random_password.postgres.result
 }
-
 
 module "security_group_rds_airflow" {
   source  = "terraform-aws-modules/security-group/aws"
@@ -32,13 +31,16 @@ module "security_group_rds_airflow" {
       to_port     = 5432
       protocol    = "tcp"
       description = "PostgreSQL access from within VPC"
-      cidr_blocks = "${module.vpc.vpc_cidr_block}"
+      cidr_blocks = module.vpc.vpc_cidr_block
     },
   ]
 
   tags = local.tags
 }
 
+################################################################################
+# RDS Database
+################################################################################
 module "db" {
   source  = "terraform-aws-modules/rds/aws"
   version = "~> 5.0"
@@ -160,7 +162,8 @@ resource "aws_iam_policy" "airflow_scheduler" {
 
 # IRSA for AirFlow Scheduler
 module "airflow_irsa_scheduler" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.30"
 
   role_name = "airflow-scheduler"
 
@@ -224,7 +227,8 @@ resource "kubernetes_secret_v1" "airflow_webserver" {
 }
 
 module "airflow_irsa_webserver" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.30"
 
   role_name = "airflow-webserver"
 
@@ -307,7 +311,8 @@ resource "kubernetes_secret_v1" "airflow_worker" {
 }
 
 module "airflow_irsa_worker" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.30"
 
   role_name = "airflow-worker"
 
