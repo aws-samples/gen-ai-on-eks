@@ -1,9 +1,6 @@
 # Fine-tuning Foundation Models on Amazon EKS for AI/ML Workloads
 
-This demonstration showcases the flexibility of a single EKS (Elastic Kubernetes Service) cluster in managing diverse Ray workloads through multiple Ray clusters, orchestrated by the Ray Operator. One Ray cluster is pre-deployed specifically for training tasks, utilizing the RayJobSubmission API for streamlined job management. Additional Ray clusters can be dynamically spun up on-demand for various other workloads like serving, simulation, or data processing.
-
-To further optimize resource allocation for these distinct workloads, each Ray cluster is equipped with its own Karpenter provisioner. This allows us to fine-tune the compute resources that are dedicated to each Ray cluster, ensuring efficiency and cost-effectiveness.
-
+In this all-in-one demo on Amazon EKS, we use JupyterHub to guide you through the initial stages of serving a pre-trained model and fine-tuning it with new data. We then shift gears to utilize Ray Operator for optimized serving and Karpenter for custom resource allocation. The demo showcases how to achieve cost-effectiveness and multi-tenancy with various Ray clusters, all while walking you through each step in a Jupyter notebook.
 ## Prerequisites
 
 - AWS Credentials configured
