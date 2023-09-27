@@ -1,14 +1,28 @@
 locals {
-  name   = var.name
-  region = var.aws_region
+  name       = var.name
+  region     = coalesce(var.aws_region, data.aws_region.current.name)
+  account_id = data.aws_caller_identity.current.account_id
+  partition  = data.aws_partition.current.partition
 
   vpc_cidr = var.vpc_cidr
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 
   tags = {
-    Blueprint  = var.name
-    GithubRepo = "github.com/aws-ia/terraform-aws-eks-blueprints"
+    Sample     = var.name
+    GithubRepo = "github.com/aws-samples/gen-ai-on-eks"
   }
+}
+
+data "aws_region" "current" {}
+
+data "aws_caller_identity" "current" {}
+
+data "aws_availability_zones" "available" {}
+
+data "aws_partition" "current" {}
+
+data "aws_ecrpublic_authorization_token" "token" {
+  provider = aws.ecr
 }
 
 ################################################################################
@@ -48,7 +62,8 @@ module "vpc" {
 
 # Role needed for EBS CSI Driver
 module "ebs_csi_irsa_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.30"
 
   role_name = "ebs-csi-fmops"
 
@@ -64,7 +79,7 @@ module "ebs_csi_irsa_role" {
 
 
 ################################################################################
-# Cluster
+# EKS Cluster
 ################################################################################
 
 module "eks" {

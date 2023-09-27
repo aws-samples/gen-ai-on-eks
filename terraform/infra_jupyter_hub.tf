@@ -1,6 +1,6 @@
-#---------------------------------------------------------------
+################################################################################
 # Jupyterhub Stack
-#---------------------------------------------------------------
+################################################################################
 resource "kubernetes_namespace" "jupyterhub" {
   metadata {
     name = "jupyterhub"
@@ -8,14 +8,14 @@ resource "kubernetes_namespace" "jupyterhub" {
 }
 
 module "jupyterhub_single_user_irsa" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.30"
 
   role_name = "jupyterhub-single-user"
 
   role_policy_arns = {
     policy = "arn:aws:iam::aws:policy/AdministratorAccess" # Define just the right permission for Jupyter Notebooks
   }
-
 
   oidc_providers = {
     main = {
@@ -48,24 +48,6 @@ resource "kubernetes_secret_v1" "jupyterhub_single_user" {
 
   type = "kubernetes.io/service-account-token"
 }
-
-# resource "helm_release" "jupyterhub" {
-#   namespace        = "jupyterhub"
-#   create_namespace = false
-#   name             = "jupyterhub"
-#   repository       = "https://jupyterhub.github.io/helm-chart/"
-#   chart            = "jupyterhub"
-#   version          = "2.0.0"
-
-#   values = [templatefile("${path.module}/jupyter-hub/values.yaml", {
-#       jupyter_single_user_sa_name = kubernetes_service_account_v1.jupyterhub_single_user_sa.metadata[0].name
-#     })]
-
-#   depends_on = [
-#     module.eks, module.eks_blueprints_addons, kubectl_manifest.karpenter_provisioner,
-#     aws_efs_file_system.efs, aws_efs_mount_target.efs_mt, kubernetes_namespace.jupyterhub
-#   ]
-# }
 
 resource "kubectl_manifest" "storage_class_gp3" {
   yaml_body = <<YAML

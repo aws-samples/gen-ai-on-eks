@@ -1,6 +1,6 @@
-#---------------------------------------------------------------
+################################################################################
 # Karpenter Needed resources and permissions
-#---------------------------------------------------------------
+################################################################################
 
 # We have to augment default the karpenter node IAM policy with
 # permissions we need for Ray Jobs to run until IRSA is added
@@ -62,6 +62,9 @@ resource "aws_s3_bucket" "fm_ops_data" {
   }
 }
 
+################################################################################
+# EKS AddOns
+################################################################################
 module "eks_blueprints_addons" {
   source            = "github.com/aws-ia/terraform-aws-eks-blueprints-addons?ref=v1.2.2"
   cluster_name      = module.eks.cluster_name
@@ -88,7 +91,7 @@ module "eks_blueprints_addons" {
       chart            = "gpu-operator"
       chart_version    = "v23.3.2"
       repository       = "https://helm.ngc.nvidia.com/nvidia"
-      values           = ["${file("${var.nvidia_gpu_values_path}")}"]
+      values           = [file(var.nvidia_gpu_values_path)]
     }
     jupyter-hub = {
       description      = "A Helm chart for JupyterHub"
@@ -97,7 +100,7 @@ module "eks_blueprints_addons" {
       chart            = "jupyterhub"
       chart_version    = "2.0.0"
       repository       = "https://jupyterhub.github.io/helm-chart/"
-      values = [templatefile("${path.module}/helm-values/jupyterhub-values.yaml", {
+      values = [templatefile(var.jupyter_hub_values_path, {
         jupyter_single_user_sa_name = kubernetes_service_account_v1.jupyterhub_single_user_sa.metadata[0].name
       })]
     }
@@ -116,7 +119,7 @@ module "eks_blueprints_addons" {
       chart            = "ray-cluster"
       chart_version    = "0.5.0"
       repository       = "https://ray-project.github.io/kuberay-helm/"
-      values           = ["${file("${var.kuberay_cluster_train_values_path}")}"]
+      values           = [file(var.kuberay_cluster_train_values_path)]
     }
     apache-airflow = {
       description      = "A Helm chart for Apache Airflow"
@@ -146,5 +149,3 @@ module "eks_blueprints_addons" {
     Environment = "mlops-dev"
   }
 }
-
-

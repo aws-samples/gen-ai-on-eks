@@ -1,6 +1,4 @@
-provider "aws" {
-  region = local.region
-}
+provider "aws" {}
 
 # ECR always authenticates with `us-east-1` region
 # Docs -> https://docs.aws.amazon.com/AmazonECR/latest/public/public-registries.html

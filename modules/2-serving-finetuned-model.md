@@ -57,12 +57,12 @@ kubectl get nodes -l provisioner=gpu-serve
 
 4. **Check NVIDIA GPU Operator**:
 ```bash
-kubectl get po -n gpu-operator
+kubectl get pods -n gpu-operator
 ```
 
 5. **Wait for Resources to Initialize**:
 ```bash
-kubectl get po -n ray-svc-finetuned -w
+kubectl get pods -n ray-svc-finetuned -w
 ```
 
 > It can take a while to initialize because of the dependencies (GPU Operator and pulling Ray Images)
