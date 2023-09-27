@@ -25,6 +25,10 @@ aws iam create-service-linked-role --aws-service-name spot.amazonaws.com
 
 ## Environment Setup
 
+The environment required to train the models in this demonstration, will require 8-10 `g5.4xlarge` Amazon EC2 instances which together will sum up to 160 vCPU of the **G5 Instance family**, make sure that you have the enough Service Quota available in your AWS Account to acomodate the resources that are being created.
+
+You can use this deep link to validate your current [AWS Service Quota](https://console.aws.amazon.com/servicequotas/home/services/ec2/quotas/L-DB2E81BA) limits. Check the *Applied quota value*, and **Request increase at account-level** clicking on the top right button, if needed.
+
 ### Apply Terraform Script
 
 ```bash
