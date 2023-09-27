@@ -103,3 +103,11 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
+
+## Tear down
+
+To tear down your environment, run the `tear-down.sh` script inside the `terraform/scripts` directory.
+
+```bash
+sh scripts/tear-down.sh
+```
