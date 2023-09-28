@@ -90,6 +90,10 @@ You're now ready to proceed with the demonstration.
 
 The demonstration is broken down into two modules, each focusing on a specific aspect of fine-tuning Foundation Models like Falcon 7B on Amazon EKS. By the end of this demonstration, you'll have learned how to use Notebooks powered by JupyterHub to craft your training and serving script and run them on specific Ray Clusters.
 
+### Demonstration Flow Diagram
+
+![Demonstration Flow Diagram](static/demonstration-flow.png)
+
 ### [1. Crafting training and serving script in Jupyter Notebook and training using Ray](./modules/1-crafting-serving-training-notebook.md)
 ### [2. Serving finetuned model with contextual data using RayOperator](./modules/2-serving-finetuned-model.md)
 
