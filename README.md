@@ -16,9 +16,9 @@ In this all-in-one demo on Amazon EKS, we use JupyterHub to guide you through th
 aws iam create-service-linked-role --aws-service-name spot.amazonaws.com
 ```
 
-## Architecture
+## High Level Architecture
 
-![ML Ops Arch Diagram](static/ml-ops-arch-diagram.png)
+![ML Ops Arch Diagram](static/high-level-diagram.png)
 
 ## Environment Setup
 
