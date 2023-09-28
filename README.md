@@ -94,7 +94,7 @@ The demonstration is broken down into two modules, each focusing on a specific a
 
 ![Demonstration Flow Diagram](static/demonstration-flow.png)
 
-### [1. Craft training and serving scripts in Jupyter Notebook and submitting training using RayJobSubmission](./modules/1-crafting-serving-training-notebook.md)
+### [1. Crafting scripts in Jupyter Notebook and submitting using  RayJobSubmission](./modules/1-crafting-serving-training-notebook.md)
 ### [2. Serving finetuned model with contextual data using RayOperator](./modules/2-serving-finetuned-model.md)
 
 ## Security
