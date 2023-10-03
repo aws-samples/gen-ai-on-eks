@@ -1,4 +1,4 @@
-## Module: Deploying a Non Fine-Tuned Model with Ray and Amazon S3
+## Module: Deploying Fine-Tuned Model with Ray and Amazon S3
 
 ### Objective
 
