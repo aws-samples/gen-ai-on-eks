@@ -107,13 +107,6 @@ module "eks" {
     },
   ]
 
-  aws_auth_users = [
-    {
-      userarn  = "arn:aws:iam::054678736585:user/martinig"
-      username = "user1"
-      groups   = ["system:masters"]
-    }
-  ]
 
   cluster_addons = {
 
