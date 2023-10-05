@@ -12,7 +12,7 @@ Exposing JupyterHub endpoint:
 kubectl port-forward svc/proxy-public 8080:80 -n jupyterhub
 ```
 
-> You can choose any port that you'd like (local-port):(service-port). In the above example we are using `8080`, so open the `https://localhost:8080` in your local browser.
+> You can choose any port that you'd like (local-port):(service-port). In the above example we are using `8080`, so open the `http://localhost:8080` in your local browser.
 
 Since we are using JupyterHub `dummy` auth mechanism, we can define **any user and password** in-order to get access to Jupyter Console:
 

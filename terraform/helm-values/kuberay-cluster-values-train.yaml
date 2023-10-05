@@ -11,12 +11,12 @@ head:
       # nvidia.com/gpu: 1
       cpu: "12"
       memory: "16Gi"
-      ephemeral-storage: "200Gi"
+      ephemeral-storage: "100Gi"
     requests:
       # nvidia.com/gpu: 1
       cpu: "12"
       memory: "16Gi"
-      ephemeral-storage: "200Gi"
+      ephemeral-storage: "100Gi"
   volumes:
     - name: log-volume
       emptyDir: {}
@@ -53,7 +53,7 @@ worker:
     prometheus.io/path: '/metrics'
     prometheus.io/port: '8080'
   nodeSelector:
-    provisioner: gpu-train # This is used to forcefully scale Karpenter specific provisioner for train
+    provisioner: gpu-train-ray # This is used to forcefully scale Karpenter specific provisioner for train
   tolerations:
     - key: "nvidia.com/gpu"
       operator: "Exists"
