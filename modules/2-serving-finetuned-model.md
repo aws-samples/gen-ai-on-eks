@@ -2,7 +2,7 @@
 
 ### Objective
 
-In this module, we will walk through the steps required to deploy a Ray service that utilizes a non fine-tuned model. The code for this model will be zipped and uploaded to an Amazon S3 bucket. Subsequently, we will deploy a Ray service in a Kubernetes cluster, configured to pull this code using a pre-signed URL.
+In this module, we will walk through the steps required to deploy a Ray service that utilizes our previously fine-tuned model, using the pre-signed url generated before. 
 
 ### Deploy RayService to Kubernetes Cluster
 
