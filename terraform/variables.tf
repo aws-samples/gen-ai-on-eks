@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS Region."
   type        = string
-  default     = "us-west-2"
+  default     = "us-east-1"
 }
 
 variable "vpc_cidr" {
@@ -19,7 +19,7 @@ variable "db_private_subnets" {
 variable "name" {
   description = "Name to be added to the modules and resources."
   type        = string
-  default     = "gen-ai-on-eks"
+  default     = "gen-ai-eks"
 }
 
 variable "cluster_version" {
