@@ -127,7 +127,7 @@ spec:
                   path: /tmp/
             containers:
               - name: ray-worker # must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character (e.g. 'my-name',  or '123-abc'
-                image: rayproject/ray-ml:2.6.3.54de39-py38-gpu
+                image: rayproject/ray-ml:2.6.3-py38-gpu
                 lifecycle:
                   preStop:
                     exec:
