@@ -114,7 +114,7 @@ spec:
         template:
           spec:
             nodeSelector:
-              provisioner: gpu-serve # This is used to forcefully scale Karpenter specific provisioner for serve
+              provisioner: gpu-serve-ray # This is used to forcefully scale Karpenter specific provisioner for serve
             tolerations:
               - key: "nvidia.com/gpu"
                 operator: "Exists"

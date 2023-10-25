@@ -19,7 +19,7 @@ variable "db_private_subnets" {
 variable "name" {
   description = "Name to be added to the modules and resources."
   type        = string
-  default     = "fmops-cluster"
+  default     = "gen-ai-eks"
 }
 
 variable "cluster_version" {
@@ -31,7 +31,7 @@ variable "cluster_version" {
 variable "jupyter_hub_values_path" {
   description = "Path for JupyterHub Helm values file."
   type        = string
-  default     = "helm-values/jupyterhub-values.yaml"
+  default     = "helm-values/jupyterhub-profiles-values.yaml"
 }
 
 variable "kuberay_cluster_train_values_path" {

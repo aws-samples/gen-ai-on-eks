@@ -1,0 +1,110 @@
+hub:
+  db:
+    pvc:
+      storageClassName: gp2
+  authenticatePrometheus: false
+
+proxy:
+  https:
+    enabled: false
+    type: offload
+  service:
+    type: ClusterIP
+singleuser:
+  startTimeout: 1200 # 20 mins to spin up a notebook server for GPU including the image pull
+  profileList:
+    - display_name: Data Engineering (CPU)
+      description: "PySpark Notebooks | Karpenter AutoScaling"
+      profile_options:
+        image:
+          display_name: "Image"
+          choices:
+            pyspark350:
+              display_name: "PySpark 3.5.0 + Python 3.11"
+              default: true
+              kubespawner_override:
+                image: jupyter/pyspark-notebook:spark-3.5.0
+            pyspark341:
+              display_name: "PySpark 3.4.1 + Python 3.11"
+              kubespawner_override:
+                image: jupyter/pyspark-notebook:spark-3.4.1
+      kubespawner_override:
+        node_selector:
+          karpenter.sh/provisioner-name: default-jupyter
+        cpu_guarantee: 2
+        mem_guarantee: 8G
+        cpu_limit: 4
+        mem_limit: 8G
+      cmd: null
+    - display_name: Data Science (GPU + Time-Slicing - G5)
+      default: true
+      description: "GPU Time-Slicing with Single GPU VMs (G5 2x, 4x, 8x, 16x) | nvidia.com/gpu: 1 | Karpenter AutoScaling"
+      kubespawner_override:
+        image: jupyter/datascience-notebook:python-3.8.8
+        node_selector:
+          karpenter.sh/provisioner-name: gpu-ts # TIME-SLICING: Use this config with time-slicing mode
+        tolerations:
+          - key: "nvidia.com/gpu"
+            operator: "Exists"
+            effect: "NoSchedule"
+          - key: "hub.jupyter.org/dedicated" # According to optimization docs https://z2jh.jupyter.org/en/latest/administrator/optimization.html
+            operator: "Equal"
+            value: "user"
+            effect: "NoSchedule"
+        extra_resource_limits:
+          nvidia.com/gpu: "1" # TIME-SLICING: Use a slice of GPU using time-slicing mode
+        cpu_limit: 2
+        mem_limit: 4G
+        cpu_guarantee: 2
+        mem_guarantee: 4G
+        cmd: "start-singleuser.sh"
+  storage:
+    type: "static"
+    static:
+      pvcName: "efs-persist"
+      subPath: "home/{username}"
+    extraVolumes:
+    - name: jupyterhub-shared
+      persistentVolumeClaim:
+        claimName: efs-persist-shared
+    extraVolumeMounts:
+    - name: jupyterhub-shared
+      mountPath: /home/shared
+      readOnly: false
+  serviceAccountName: ${jupyter_single_user_sa_name}
+  allowPrivilegeEscalation: true
+  extraPodConfig: # This is needed for Jovyan user running in every single pod, access the Service Account
+    securityContext:
+        fsGroup: 100
+  extraEnv: # Sudo needed to configure the proper permissions to start the notebook instance
+    GRANT_SUDO: "yes"
+    NOTEBOOK_ARGS: "--allow-root"
+    CHOWN_HOME: "yes"
+    CHOWN_HOME_OPTS: "-R"
+    CHOWN_EXTRA: "/home/shared"
+  uid: 0
+  fsGid: 0
+  cmd: null
+
+# Optimizations configured according to this doc https://z2jh.jupyter.org/en/latest/administrator/optimization.html
+scheduling:
+  userScheduler:
+    enabled: false
+  podPriority:
+    enabled: true
+  userPlaceholder:
+    enabled: false
+    replicas: 1
+  userPods:
+    nodeAffinity:
+      matchNodePurpose: prefer # This will force single-user pods to use an specific karpenter provisioner
+
+prePuller:
+  hook:
+    enabled: false
+  continuous:
+    # NOTE: if used with Karpenter, also add user-placeholders
+    enabled: false
+
+global:
+  safeToShowValues: false

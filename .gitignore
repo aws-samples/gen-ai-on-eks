@@ -41,3 +41,7 @@ terraform.rc
 
 # OSx
 .DS_Store
+
+# Python
+.venv
+flagged
