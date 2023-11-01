@@ -1,6 +1,6 @@
 # Ray cluster installed using Helm Charts
 image:
-  repository: rayproject/ray-ml
+  repository: rayproject/ray
   tag: "2.6.3-py38-gpu"
   pullPolicy: IfNotPresent
 
@@ -26,7 +26,6 @@ head:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  command: ["wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install"]
   annotations:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/metrics'
@@ -72,7 +71,7 @@ worker:
   replicas: "4"
   minReplicas: "4"
   maxReplicas: "10"
-  command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2 && wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install"]
+  command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"

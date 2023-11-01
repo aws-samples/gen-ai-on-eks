@@ -19,7 +19,7 @@ variable "db_private_subnets" {
 variable "name" {
   description = "Name to be added to the modules and resources."
   type        = string
-  default     = "gen-ai-eks"
+  default     = "gen-ai-eks-new"
 }
 
 variable "cluster_version" {
