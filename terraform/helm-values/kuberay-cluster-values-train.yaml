@@ -26,11 +26,14 @@ head:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  command: ["wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install"]
+  command:
+    [
+      "wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install",
+    ]
   annotations:
-    prometheus.io/scrape: 'true'
-    prometheus.io/path: '/metrics'
-    prometheus.io/port: '8080'
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8080"
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
@@ -48,9 +51,9 @@ worker:
       memory: "50Gi"
       ephemeral-storage: "200Gi"
   annotations:
-    prometheus.io/scrape: 'true'
-    prometheus.io/path: '/metrics'
-    prometheus.io/port: '8080'
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8080"
   nodeSelector:
     provisioner: gpu-train-ray # This is used to forcefully scale Karpenter specific provisioner for train
   tolerations:
@@ -69,10 +72,13 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "4"
-  minReplicas: "4"
+  replicas: "10"
+  minReplicas: "10"
   maxReplicas: "10"
-  command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2 && wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install"]
+  command:
+    [
+      "DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.9.2 && wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install",
+    ]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
