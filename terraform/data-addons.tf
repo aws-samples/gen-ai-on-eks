@@ -1,0 +1,199 @@
+#---------------------------------------------------------------
+# Data on EKS Kubernetes Addons
+#---------------------------------------------------------------
+module "data_addons" {
+  source  = "aws-ia/eks-data-addons/aws"
+  version = "~> 1.31.5" # ensure to update this to the latest/desired version
+
+  oidc_provider_arn = module.eks.oidc_provider_arn
+
+  #---------------------------------------------------------------
+  # JupyterHub Add-on
+  #---------------------------------------------------------------
+  enable_jupyterhub = true
+  jupyterhub_helm_config = {
+    namespace        = kubernetes_namespace_v1.jupyterhub.id
+    create_namespace = false
+    values           = [file("${path.module}/helm-values/jupyterhub-values.yaml")]
+  }
+
+  enable_volcano = true
+  #---------------------------------------
+  # Kuberay Operator
+  #---------------------------------------
+  enable_kuberay_operator = true
+  kuberay_operator_helm_config = {
+    version = "1.1.0"
+    # Enabling Volcano as Batch scheduler for KubeRay Operator
+    values = [
+      <<-EOT
+      batchScheduler:
+        enabled: true
+    EOT
+    ]
+  }
+
+  #---------------------------------------------------------------
+  # NVIDIA Device Plugin Add-on
+  #---------------------------------------------------------------
+  enable_nvidia_device_plugin = true
+  nvidia_device_plugin_helm_config = {
+    version = "v0.14.5"
+    name    = "nvidia-device-plugin"
+    values = [
+      <<-EOT
+        gfd:
+          enabled: true
+        nfd:
+          worker:
+            tolerations:
+              - key: nvidia.com/gpu
+                operator: Exists
+                effect: NoSchedule
+              - operator: "Exists"
+      EOT
+    ]
+  }
+
+  #---------------------------------------
+  # EFA Device Plugin Add-on
+  #---------------------------------------
+  # IMPORTANT: Enable EFA only on nodes with EFA devices attached.
+  # Otherwise, you'll encounter the "No devices found..." error. Restart the pod after attaching an EFA device, or use a node selector to prevent incompatible scheduling.
+  enable_aws_efa_k8s_device_plugin = var.enable_aws_efa_k8s_device_plugin
+  aws_efa_k8s_device_plugin_helm_config = {
+    values = [file("${path.module}/helm-values/aws-efa-k8s-device-plugin-values.yaml")]
+  }
+
+  #---------------------------------------------------------------
+  # Karpenter Resources Add-on
+  #---------------------------------------------------------------
+  enable_karpenter_resources = true
+  karpenter_resources_helm_config = {
+    g5-gpu-karpenter = {
+      values = [
+        <<-EOT
+      name: g5-gpu-karpenter
+      clusterName: ${module.eks.cluster_name}
+      ec2NodeClass:
+        karpenterRole: ${split("/", module.eks_blueprints_addons.karpenter.node_iam_role_arn)[1]}
+        subnetSelectorTerms:
+          id: ${module.vpc.private_subnets[2]}
+        securityGroupSelectorTerms:
+          tags:
+            Name: ${module.eks.cluster_name}-node
+        instanceStorePolicy: RAID0
+
+      nodePool:
+        labels:
+          - type: karpenter
+          - NodeGroupType: g5-gpu-karpenter
+        taints:
+          - key: nvidia.com/gpu
+            value: "Exists"
+            effect: "NoSchedule"
+        requirements:
+          - key: "karpenter.k8s.aws/instance-family"
+            operator: In
+            values: ["g5"]
+          - key: "karpenter.k8s.aws/instance-size"
+            operator: In
+            values: [ "2xlarge", "4xlarge", "8xlarge"]
+          - key: "kubernetes.io/arch"
+            operator: In
+            values: ["amd64"]
+          - key: "karpenter.sh/capacity-type"
+            operator: In
+            values: ["spot", "on-demand"]
+        limits:
+          cpu: 1000
+        disruption:
+          consolidationPolicy: WhenEmpty
+          consolidateAfter: 180s
+          expireAfter: 720h
+        weight: 100
+      EOT
+      ]
+    }
+    x86-cpu-karpenter = {
+      values = [
+        <<-EOT
+      name: x86-cpu-karpenter
+      clusterName: ${module.eks.cluster_name}
+      ec2NodeClass:
+        karpenterRole: ${split("/", module.eks_blueprints_addons.karpenter.node_iam_role_arn)[1]}
+        subnetSelectorTerms:
+          id: ${module.vpc.private_subnets[3]}
+        securityGroupSelectorTerms:
+          tags:
+            Name: ${module.eks.cluster_name}-node
+        instanceStorePolicy: RAID0
+
+      nodePool:
+        labels:
+          - type: karpenter
+          - NodeGroupType: x86-cpu-karpenter
+        requirements:
+          - key: "karpenter.k8s.aws/instance-family"
+            operator: In
+            values: ["m5"]
+          - key: "karpenter.k8s.aws/instance-size"
+            operator: In
+            values: [ "xlarge", "2xlarge", "4xlarge", "8xlarge"]
+          - key: "kubernetes.io/arch"
+            operator: In
+            values: ["amd64"]
+          - key: "karpenter.sh/capacity-type"
+            operator: In
+            values: ["spot", "on-demand"]
+        limits:
+          cpu: 1000
+        disruption:
+          consolidationPolicy: WhenEmpty
+          consolidateAfter: 180s
+          expireAfter: 720h
+        weight: 100
+      EOT
+      ]
+    }
+  }
+
+  depends_on = [
+    kubernetes_secret_v1.huggingface_token,
+    kubernetes_config_map_v1.notebook
+  ]
+}
+
+#---------------------------------------------------------------
+# Additional Resources
+#---------------------------------------------------------------
+
+resource "kubernetes_namespace_v1" "jupyterhub" {
+  metadata {
+    name = "jupyterhub"
+  }
+}
+
+
+resource "kubernetes_secret_v1" "huggingface_token" {
+  metadata {
+    name      = "hf-token"
+    namespace = kubernetes_namespace_v1.jupyterhub.id
+  }
+
+  data = {
+    token = var.huggingface_token
+  }
+}
+
+resource "kubernetes_config_map_v1" "notebook" {
+  metadata {
+    name      = "notebook"
+    namespace = kubernetes_namespace_v1.jupyterhub.id
+  }
+
+  data = {
+    "dogbooth.ipynb"        = file("${path.module}/src/notebook/dogbooth.ipynb")
+    "llm_train_serve.ipynb" = file("${path.module}/src/notebook/llm_train_serve.ipynb")
+  }
+}
