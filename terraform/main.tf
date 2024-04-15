@@ -11,10 +11,10 @@ locals {
   public_subnets     = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 5, k + 8)]
   secondary_ip_range = [for k, v in local.azs : cidrsubnet(element(var.secondary_cidr_blocks, 0), 1, k)]
 
-  tags = {
+  tags = merge(var.tags, {
     Sample     = var.name
     GithubRepo = "github.com/aws-samples/gen-ai-on-eks"
-  }
+  })
 }
 
 data "aws_region" "current" {}
@@ -173,9 +173,9 @@ module "eks" {
       )
 
       ami_type     = "AL2_x86_64_GPU"
-      min_size     = 1
+      min_size     = 0
       max_size     = 1
-      desired_size = 1
+      desired_size = 0
 
       instance_types = ["g5.12xlarge"]
 

@@ -19,18 +19,43 @@ proxy:
       service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
       service.beta.kubernetes.io/aws-load-balancer-ip-address-type: ipv4
 singleuser:
-  image:
-    name: public.ecr.aws/h3o5n2r0/gpu-jupyter
-    tag: v1.5_cuda-11.6_ubuntu-20.04_python-only
-    pullPolicy: Always
-  cmd: null
-  startTimeout: 600
+  startTimeout: 1200 
+  profileList:
+  - display_name: Data Engineering (CPU)
+    description: "PySpark Notebooks with CPU only"
+    kubespawner_override:
+        image: jupyter/scipy-notebook:python-3.10.11
+        cpu_guarantee: 2
+        mem_guarantee: 8G
+        cpu_limit: 4
+        mem_limit: 8G
+    cmd: null
+  - display_name: Data Engineering (GPU)
+    description: " Notebooks with GPU Timeslicing only"
+    kubespawner_override:
+        image: quay.io/jupyter/pytorch-notebook:cuda12-python-3.11.8
+        tolerations:
+          - key: "nvidia.com/gpu"
+            operator: "Exists"
+            effect: "NoSchedule"
+        extra_resource_limits:
+          nvidia.com/gpu: "1" # TIME-SLICING: Use a slice of GPU using time-slicing mode
+        cpu_limit: 2
+        mem_limit: 4G
+        cpu_guarantee: 2
+        mem_guarantee: 4G
+        cmd: "start-singleuser.sh"
   memory:
     guarantee: 24G
   extraResource:
     limits:
       nvidia.com/gpu: "1"
   extraEnv:
+    GRANT_SUDO: "yes"
+    NOTEBOOK_ARGS: "--allow-root"
+    CHOWN_HOME: "yes"
+    CHOWN_HOME_OPTS: "-R"
+    CHOWN_EXTRA: "/home/shared"
     HUGGING_FACE_HUB_TOKEN:
       valueFrom:
         secretKeyRef:
@@ -50,10 +75,16 @@ singleuser:
         mountPath: /dev/shm
       - name: notebook
         mountPath: /home/jovyan/notebooks
-  extraTolerations:
-    - key: nvidia.com/gpu
-      operator: Exists
-      effect: NoSchedule
+  allowPrivilegeEscalation: true
+    
 scheduling:
   userScheduler:
     enabled: false
+  podPriority:
+    enabled: true
+  userPlaceholder:
+    enabled: false
+    replicas: 1
+  userPods:
+    nodeAffinity:
+      matchNodePurpose: prefer

@@ -12,6 +12,7 @@ module "data_addons" {
   #---------------------------------------------------------------
   enable_jupyterhub = true
   jupyterhub_helm_config = {
+    version          = "3.3.7"
     namespace        = kubernetes_namespace_v1.jupyterhub.id
     create_namespace = false
     values           = [file("${path.module}/helm-values/jupyterhub-values.yaml")]
@@ -70,10 +71,10 @@ module "data_addons" {
   #---------------------------------------------------------------
   enable_karpenter_resources = true
   karpenter_resources_helm_config = {
-    g5-gpu-karpenter = {
+    gpu-karpenter = {
       values = [
         <<-EOT
-      name: g5-gpu-karpenter
+      name: gpu-karpenter
       clusterName: ${module.eks.cluster_name}
       ec2NodeClass:
         karpenterRole: ${split("/", module.eks_blueprints_addons.karpenter.node_iam_role_arn)[1]}
@@ -82,12 +83,14 @@ module "data_addons" {
         securityGroupSelectorTerms:
           tags:
             Name: ${module.eks.cluster_name}-node
+        amiSelectorTerms:
+        - id: ami-096399a9e3c152f3b
         instanceStorePolicy: RAID0
 
       nodePool:
         labels:
           - type: karpenter
-          - NodeGroupType: g5-gpu-karpenter
+          - NodeGroupType: gpu-karpenter
         taints:
           - key: nvidia.com/gpu
             value: "Exists"
@@ -98,7 +101,7 @@ module "data_addons" {
             values: ["g5"]
           - key: "karpenter.k8s.aws/instance-size"
             operator: In
-            values: [ "2xlarge", "4xlarge", "8xlarge"]
+            values: [ "4xlarge", "8xlarge","12xlarge"]
           - key: "kubernetes.io/arch"
             operator: In
             values: ["amd64"]
@@ -128,18 +131,26 @@ module "data_addons" {
           tags:
             Name: ${module.eks.cluster_name}-node
         instanceStorePolicy: RAID0
+        blockDeviceMappings:
+          - deviceName: /dev/xvda
+            ebs:
+              volumeSize: 240Gi
+              volumeType: gp3
+              iops: 10000
+              encrypted: true
+              deleteOnTermination: true
 
       nodePool:
         labels:
           - type: karpenter
           - NodeGroupType: x86-cpu-karpenter
         requirements:
-          - key: "karpenter.k8s.aws/instance-family"
+          - key: "karpenter.k8s.aws/instance-category"
             operator: In
-            values: ["m5"]
+            values: ["r","c","m"]
           - key: "karpenter.k8s.aws/instance-size"
             operator: In
-            values: [ "xlarge", "2xlarge", "4xlarge", "8xlarge"]
+            values: [ "xlarge", "2xlarge", "4xlarge", "8xlarge", "16xlarge", "24xlarge"]
           - key: "kubernetes.io/arch"
             operator: In
             values: ["amd64"]
@@ -196,4 +207,31 @@ resource "kubernetes_config_map_v1" "notebook" {
     "dogbooth.ipynb"        = file("${path.module}/src/notebook/dogbooth.ipynb")
     "llm_train_serve.ipynb" = file("${path.module}/src/notebook/llm_train_serve.ipynb")
   }
+}
+
+#---------------------------------------------------------------
+# Ray train cluster
+#---------------------------------------------------------------
+module "eks_blueprints_helm_install" {
+  source  = "aws-ia/eks-blueprints-addons/aws"
+  version = "~> 1.16.2"
+
+  cluster_name      = module.eks.cluster_name
+  cluster_endpoint  = module.eks.cluster_endpoint
+  cluster_version   = module.eks.cluster_version
+  oidc_provider_arn = module.eks.oidc_provider_arn
+
+  helm_releases = {
+    ray-cluster-train = {
+      description      = "A Helm chart for RAY operator"
+      namespace        = "ray-cluster-train"
+      create_namespace = true
+      chart            = "ray-cluster"
+      chart_version    = "1.1.0"
+      repository       = "https://ray-project.github.io/kuberay-helm/"
+      values           = [file("${path.module}/helm-values/ray-train-cluster.yaml")]
+    }
+  }
+
+  depends_on = [module.data_addons]
 }

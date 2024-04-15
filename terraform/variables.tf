@@ -44,3 +44,9 @@ variable "huggingface_token" {
   type        = string
   sensitive   = true
 }
+
+variable "tags" {
+  type        = map(string)
+  description = "AWS tags that will be applied to all resources"
+  default     = {}
+}
