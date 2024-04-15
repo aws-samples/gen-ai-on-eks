@@ -42,6 +42,7 @@ variable "enable_aws_efa_k8s_device_plugin" {
 variable "huggingface_token" {
   description = "Hugging Face Secret Token"
   type        = string
+  default     = "DUMMY_VALUE"
   sensitive   = true
 }
 
