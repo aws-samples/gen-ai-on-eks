@@ -16,23 +16,23 @@ proxy:
       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
       service.beta.kubernetes.io/aws-load-balancer-scheme: internal # Private Load Balancer can only be accessed within the VPC
       service.beta.kubernetes.io/aws-load-balancer-type: external
-      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
       service.beta.kubernetes.io/aws-load-balancer-ip-address-type: ipv4
 singleuser:
-  startTimeout: 1200 
+  startTimeout: 1200
   profileList:
-  - display_name: Data Engineering (CPU)
-    description: "PySpark Notebooks with CPU only"
-    kubespawner_override:
+    - display_name: Data Engineering (CPU)
+      description: "PySpark Notebooks with CPU only"
+      kubespawner_override:
         image: jupyter/scipy-notebook:python-3.10.11
         cpu_guarantee: 2
         mem_guarantee: 8G
         cpu_limit: 4
         mem_limit: 8G
-    cmd: null
-  - display_name: Data Engineering (GPU)
-    description: " Notebooks with GPU Timeslicing only"
-    kubespawner_override:
+      cmd: null
+    - display_name: Data Engineering (GPU)
+      description: " Notebooks with GPU Timeslicing only"
+      kubespawner_override:
         image: quay.io/jupyter/pytorch-notebook:cuda12-python-3.11.8
         tolerations:
           - key: "nvidia.com/gpu"
@@ -62,21 +62,17 @@ singleuser:
           name: hf-token
           key: token
   storage:
-    capacity: 100Gi
+    dynamic:
+      storageClass: gp3
     extraVolumes:
-      - name: shm-volume
-        emptyDir:
-          medium: Memory
       - name: notebook
         configMap:
           name: notebook
     extraVolumeMounts:
-      - name: shm-volume
-        mountPath: /dev/shm
       - name: notebook
         mountPath: /home/jovyan/notebooks
   allowPrivilegeEscalation: true
-    
+
 scheduling:
   userScheduler:
     enabled: false
