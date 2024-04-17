@@ -12,11 +12,14 @@ module "data_addons" {
   #---------------------------------------------------------------
   enable_jupyterhub = true
   jupyterhub_helm_config = {
+    values = [templatefile("${path.module}/helm-values/jupyterhub-values.yaml",
+      { jupyter_single_user_sa_name = kubernetes_service_account_v1.jupyterhub_single_user_sa.metadata[0].name
+    })]
     version          = "3.3.7"
     namespace        = kubernetes_namespace_v1.jupyterhub.id
     create_namespace = false
-    values           = [file("${path.module}/helm-values/jupyterhub-values.yaml")]
   }
+
 
   enable_volcano = true
   #---------------------------------------
@@ -234,4 +237,32 @@ module "eks_blueprints_helm_install" {
   }
 
   depends_on = [module.data_addons]
+}
+
+module "jupyterhub_single_user_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.30"
+
+  role_name = "jupyterhub-single-user"
+
+  role_policy_arns = {
+    policy = "arn:aws:iam::aws:policy/AdministratorAccess" # Define just the right permission for Jupyter Notebooks
+  }
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["${kubernetes_namespace_v1.jupyterhub.metadata[0].name}:jupyterhub-single-user"]
+    }
+  }
+}
+
+resource "kubernetes_service_account_v1" "jupyterhub_single_user_sa" {
+  metadata {
+    name        = "jupyterhub-single-user"
+    namespace   = kubernetes_namespace_v1.jupyterhub.metadata[0].name
+    annotations = { "eks.amazonaws.com/role-arn" : module.jupyterhub_single_user_irsa.iam_role_arn }
+  }
+
+  automount_service_account_token = true
 }
