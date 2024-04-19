@@ -21,7 +21,7 @@ module "data_addons" {
   }
 
 
-  enable_volcano = true
+  enable_volcano = false
   #---------------------------------------
   # Kuberay Operator
   #---------------------------------------
@@ -32,7 +32,7 @@ module "data_addons" {
     values = [
       <<-EOT
       batchScheduler:
-        enabled: true
+        enabled: false
     EOT
     ]
   }
