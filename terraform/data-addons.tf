@@ -207,8 +207,9 @@ resource "kubernetes_config_map_v1" "notebook" {
   }
 
   data = {
-    "dogbooth.ipynb"        = file("${path.module}/src/notebook/dogbooth.ipynb")
-    "llm_train_serve.ipynb" = file("${path.module}/src/notebook/llm_train_serve.ipynb")
+    "dogbooth.ipynb"           = file("${path.module}/src/notebook/dogbooth.ipynb")
+    "llm_train_serve.ipynb"    = file("${path.module}/src/notebook/llm_train_serve.ipynb")
+    "bert-training-yelp.ipynb" = file("${path.module}/src/notebook/bert-training-yelp.ipynb")
   }
 }
 
