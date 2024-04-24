@@ -74,6 +74,12 @@ singleuser:
   allowPrivilegeEscalation: true
   serviceAccountName: ${jupyter_single_user_sa_name}
 
+prePuller: # Disable hooks
+  hook:
+    enabled: false
+  continuous:
+    enabled: false
+
 scheduling:
   userScheduler:
     enabled: false
