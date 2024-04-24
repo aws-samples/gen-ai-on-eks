@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ray-svc-bert
+---
+apiVersion: ray.io/v1alpha1
+kind: RayService
+metadata:
+  name: ray-svc-bert
+  namespace: ray-svc-bert
+spec:
+  serviceUnhealthySecondThreshold: 900
+  deploymentUnhealthySecondThreshold: 300
+  serveConfigV2: |
+    applications:
+      - name: sentiment_analysis
+        import_path: serve_script.sentiment_deployment
+        route_prefix: /bert_predict
+        runtime_env:
+          working_dir: "__REPLACE_URL_HERE__"
+          pip:
+            - boto3
+            - torch
+            - transformers
+            - ray[serve]
+        deployments:
+          - name: SentimentAnalysisDeployment
+            num_replicas: 1
+            ray_actor_options:
+              num_cpus: 1
+              num_gpus: 1
+  rayClusterConfig:
+    rayVersion: '2.10.0.ee9422-py310-gpu'
+    enableInTreeAutoscaling: true
+    headGroupSpec:
+      rayStartParams:
+        dashboard-host: '0.0.0.0'
+      template:
+        spec:
+          containers:
+            - name: ray-head
+              image: rayproject/ray-ml:2.10.0.ee9422-py310-cpu
+              resources:
+                limits:
+                  cpu: "12"
+                  memory: "16Gi"
+                requests:
+                  cpu: "12"
+                  memory: "16Gi"
+              volumeMounts:
+                - mountPath: /tmp/ray
+                  name: log-volume
+                - mountPath: /mnt/cluster_storage
+                  name: ray-job-volume
+              ports:
+                - containerPort: 6379
+                  name: gcs-server
+                - containerPort: 8265
+                  name: dashboard
+                - containerPort: 10001
+                  name: client
+                - containerPort: 8000
+                  name: serve
+          volumes:
+            - name: log-volume
+              emptyDir: {}
+            - name: ray-job-volume
+              hostPath:
+                path: /tmp/
+    workerGroupSpecs:
+      - replicas: 1
+        minReplicas: 1
+        maxReplicas: 10
+        groupName: gpu-group
+        rayStartParams: {}
+        template:
+          spec:
+            tolerations:
+              - key: "nvidia.com/gpu"
+                operator: "Exists"
+                effect: "NoSchedule"
+            containers:
+              - name: ray-worker
+                image: rayproject/ray-ml:2.10.0.ee9422-py310-gpu
+                resources:
+                  limits:
+                    nvidia.com/gpu: 1
+                    cpu: "8"
+                    memory: "50Gi"
+                    ephemeral-storage: "200Gi"
+                  requests:
+                    nvidia.com/gpu: 1
+                    cpu: "8"
+                    memory: "50Gi"
+                    ephemeral-storage: "200Gi"
+                volumeMounts:
+                  - mountPath: /tmp/ray
+                    name: log-volume
+                  - mountPath: /mnt/cluster_storage
+                    name: ray-job-volume
+                env:
+                  - name: RAY_LOG_TO_STDERR
+                    value: "1"
+                  - name: CUDA_HOME
+                    value: "/usr/local/cuda"
