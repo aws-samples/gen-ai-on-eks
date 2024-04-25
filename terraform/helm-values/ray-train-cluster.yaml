@@ -1,7 +1,7 @@
 # Ray cluster installed using Helm Charts
 image:
   repository: rayproject/ray-ml
-  tag: 2.10.0.ee9422-py310-gpu
+  tag: 2.11.0.a464b6-py311-gpu
   # tag: "2.10.0.ee9422-py39-gpu"
   pullPolicy: IfNotPresent
 
@@ -68,10 +68,11 @@ worker:
       name: log-volume
     - mountPath: /mnt/cluster_storage
       name: ray-job-volume
-  replicas: "4"
-  minReplicas: "4"
+  replicas: "10"
+  minReplicas: "10"
   maxReplicas: "10"
-  command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.14.0 && wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install"]
+  # command: ["DS_BUILD_CPU_ADAM=1 pip install deepspeed==0.14.0 && wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install"]
+  command: ["wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install"]
   containerEnv:
     - name: RAY_LOG_TO_STDERR
       value: "1"
