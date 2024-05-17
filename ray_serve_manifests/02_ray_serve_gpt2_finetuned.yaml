@@ -1,21 +1,21 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ray-svc-bert
+  name: ray-svc-gpt2
 ---
 apiVersion: ray.io/v1alpha1
 kind: RayService
 metadata:
-  name: ray-svc-bert
-  namespace: ray-svc-bert
+  name: ray-svc-gpt2
+  namespace: ray-svc-gpt2
 spec:
   serviceUnhealthySecondThreshold: 900
   deploymentUnhealthySecondThreshold: 300
   serveConfigV2: |
     applications:
-      - name: sentiment_analysis
-        import_path: serve_script.sentiment_deployment
-        route_prefix: /bert_predict
+      - name: text_generation
+        import_path: gpt2_serve_script.text_generate_deployment
+        route_prefix: /gpt2_generate
         runtime_env:
           working_dir: "__REPLACE_URL_HERE__"
           pip:
@@ -24,7 +24,7 @@ spec:
             - transformers
             - ray[serve]
         deployments:
-          - name: SentimentAnalysisDeployment
+          - name: TextGenerationDeployment
             num_replicas: 1
             ray_actor_options:
               num_cpus: 1
