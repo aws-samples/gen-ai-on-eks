@@ -1,0 +1,178 @@
+################################################################################################################
+#This manifest can be used to serve applications Inferentia instances that use NeuronCores
+#This resources are provisioned using the CRDs (RayService, RayCluster, RayJob)  created by the KubeRay operator
+################################################################################################################
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ray-svc-finetuned
+---
+
+# for HUGGING FACE models the following code block must be uncommented and $HUGGING_FACE_HUB_TOKEN must be replaced with the HF token
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: hf-token
+#   namespace: llama3
+# data:
+#   hf-token: $HUGGING_FACE_HUB_TOKEN
+# ---
+
+apiVersion: ray.io/v1alpha1
+kind: RayService
+metadata:
+  #
+  name: ray-svc-finetuned
+  namespace: ray-svc-finetuned
+spec:
+  serviceUnhealthySecondThreshold: 900 # Config for the health check threshold for Ray Serve applications. Default value is 900.
+  deploymentUnhealthySecondThreshold: 300 # Config for the health check threshold for Ray dashboard agent. Default value is 300.
+
+  # serveConfigV2 takes a yaml multi-line scalar, which should be a Ray Serve multi-application config. See https://docs.ray.io/en/latest/serve/multi-app.html.
+  # Only one of serveConfig and serveConfigV2 should be used.
+  # In the serveConfig section the application that will serve the model must be defined, where:
+    # "name": Applicaton name used to identify the app in the serve section on Ray console
+    # "import_path":  It is the path where the serve script will be located
+    # "route_prefix": It will be the route where the model can be accesed 
+    # "runtime_env":  These are the application runtime parameters
+        # "working_dir": It is the script that will be used to deploy de application
+                      #  for example a s3 object URL
+        # "pip": The python packages to be installed ( - <package>==<version>)  
+    # "deployments":  These are the deployment definition for the application including the 
+                      # number of replicas and the cpus used for the replicas
+  serveConfigV2: |
+    applications:
+      - name: falcon_finetuned_financial_data
+        import_path: serve_script.deployment_finetuned 
+        route_prefix: /falcon_finetuned_financial
+        runtime_env:
+          working_dir: "PASTE YOUR PREVIOUSLY GENERATED PRESIGNED URL HERE"
+          pip:
+            - boto3
+            - torch
+            - transformers
+            - ray[serve]
+        deployments:
+          - name: PredictDeployment
+            autoscaling_config:
+              metrics_interval_s: 0.2
+              min_replicas: 2
+              max_replicas: 12
+              look_back_period_s: 2
+              downscale_delay_s: 30
+              upscale_delay_s: 2
+              target_num_ongoing_requests_per_replica: 1
+            graceful_shutdown_timeout_s: 5
+            max_concurrent_queries: 100
+            ray_actor_options:
+              num_cpus: 10
+              resources: {"neuron_cores": 2}
+
+  # rayClusterConfig: Cluster config parameters including headGroupSpec and workerGroupSpecs
+  rayClusterConfig:
+    rayVersion: '2.11.0' # should match with the Ray version in the image of the containers
+  
+  ######################headGroupSpecs#################################
+    # Ray head pod template.
+    enableInTreeAutoscaling: true  # the autoscaling can be enabled or disabled (true/false)
+    # The head pods hosts global control processes for the Ray cluster.
+   
+    headGroupSpec:
+      # The `rayStartParams` are used to configure the `ray start` command.
+      # See https://github.com/ray-project/kuberay/blob/master/docs/guidance/rayStartParams.md for the default settings of `rayStartParams` in KubeRay.
+      # See https://docs.ray.io/en/latest/cluster/cli.html#ray-start for all available options in `rayStartParams`.
+      rayStartParams:
+        dashboard-host: '0.0.0.0'
+
+      #pod template
+      template:
+        spec:
+          containers:
+            - name: ray-head
+              image: rayproject/ray-ml:2.11.0.a464b6-py311-cpu # 
+              resources: #The capacity definition for the pods, request and limits must be defined here
+                limits:  
+                  cpu: "2"
+                  memory: "20Gi"
+                requests:
+                  cpu: "2"
+                  memory: "20Gi"
+              volumeMounts:
+                - mountPath: /tmp/ray
+                  name: log-volume
+                - mountPath: /mnt/cluster_storage
+                  name: ray-job-volume
+              # for HUGGING FACE models the following code block must be uncommented
+              # env:
+              #   - name: HUGGING_FACE_HUB_TOKEN
+              #     valueFrom:
+              #       secretKeyRef:
+              #         name: hf-token
+              #         key: hf-token
+              ports:
+                - containerPort: 6379
+                  name: gcs-server
+                - containerPort: 8265 # Ray dashboard port
+                  name: dashboard
+                - containerPort: 10001
+                  name: client
+                - containerPort: 8000
+                  name: serve
+          volumes:
+             # Set volumes at the Pod level, then mount them into containers inside that Pod
+            - name: log-volume
+              emptyDir: {}
+            - name: ray-job-volume
+              hostPath:
+                path: /tmp/
+                
+    # The workersgroups will run the Ray tasks and actors.            
+    workerGroupSpecs:
+      # Set the minReplicas and maxReplicas fields to define the range for replicas in an autoscaling workerGroup
+      - replicas: 1
+        minReplicas: 1
+        maxReplicas: 5
+       
+        groupName: inf-group   # logical worker group name
+        # The `rayStartParams` are used to configure the `ray start` command.
+        # See https://github.com/ray-project/kuberay/blob/master/docs/guidance/rayStartParams.md for the default settings of `rayStartParams` in KubeRay.
+        # See https://docs.ray.io/en/latest/cluster/cli.html#ray-start for all available options in `rayStartParams`.
+        rayStartParams: {}
+        #pod template
+        template:
+          spec:
+            #This tolerations must match with taints defined in the Inferentia Karpenter NodePool
+            tolerations:
+              - key: "aws.amazon.com/neuron"  
+                operator: "Exists"
+                effect: "NoSchedule"
+            containers:
+              - name: ray-worker
+                image: rayproject/ray-ml:2.11.0.a464b6-py311-cpu  # raycluster image version for cpu. Must be the same of ray-head container
+                resources:
+                  limits:
+                    cpu: "90" # All vCPUs of inf2.24xlarge; 6vCPU daemonset overhead
+                    memory: "360G" # All memory of inf2.24xlarge; 24G for daemonset overhead
+                    aws.amazon.com/neuron: "6" # All Neuron cores of inf2.24xlarge
+                    ephemeral-storage: "200Gi"
+                  requests:
+                    cpu: "90" # All vCPUs of inf2.24xlarge; 6vCPU daemonset overhead
+                    memory: "360G" # All memory of inf2.24xlarge; 24G for daemonset overhead
+                    aws.amazon.com/neuron: "6" # All Neuron cores of inf2.24xlarge
+                    ephemeral-storage: "200Gi"
+                volumeMounts:
+                  - mountPath: /tmp/ray
+                    name: log-volume
+                  - mountPath: /mnt/cluster_storage
+                    name: ray-job-volume
+                env:
+                  - name: RAY_LOG_TO_STDERR
+                    value: "1"
+                  - name: CUDA_HOME
+                    value: "/usr/local/cuda"
+              # for HUGGING FACE models the following code block must be uncommented
+              #   - name: HUGGING_FACE_HUB_TOKEN
+              #     valueFrom:
+              #       secretKeyRef:
+              #         name: hf-token
+              #         key: hf-token
