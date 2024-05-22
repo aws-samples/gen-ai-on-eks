@@ -13,7 +13,7 @@ metadata:
 # kind: Secret
 # metadata:
 #   name: hf-token
-#   namespace: llama3
+#   namespace: ray-svc-finetuned
 # data:
 #   hf-token: $HUGGING_FACE_HUB_TOKEN
 # ---
@@ -21,7 +21,6 @@ metadata:
 apiVersion: ray.io/v1alpha1
 kind: RayService
 metadata:
-  #
   name: ray-svc-finetuned
   namespace: ray-svc-finetuned
 spec:
