@@ -1,0 +1,132 @@
+#########################################################################
+#This manifest can perform a rayjob submision to an existing Ray Cluster
+#########################################################################
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-job-finetunning
+  namespace: ray-cluster-train
+spec:
+  ttlSecondsAfterFinished: 20
+  template:
+    spec:
+      containers:
+      - name: ray-job-submitter
+        #command: ["/bin/sh",  "-c"]
+        volumeMounts:
+          - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            name: kube-api-access-lsrd2
+            readOnly: true
+          - mountPath: /var/run/mount/sample
+            name: code-sample
+        command:
+        - "/bin/bash"
+        - -c
+        - "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- ls /var/run/mount/sample"
+        - "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- wget \'$(S3_URL)\' -O train_script.py '||' true';'chmod +x train_script.py '&&' python train_script.py"
+        env:
+        - name: runtime_env
+          value: '{\"pip\":[\"ray\"\,\"datasets\"\,\"numpy\"\,\"evaluate\"\,\"boto3\"]}'
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: RAY_DASHBOARD_ADDRESS
+          value: http://ray-cluster-train-kuberay-head-svc.ray-cluster-train.svc.cluster.local:8265
+        - name: S3_URL
+          #value: 'https://data-on-eks-genai.s3.us-west-2.amazonaws.com/scripts/train_script.py?response-content-disposition=inline&X-Amz-Security-Token=IQoJb3JpZ2luX2VjECkaCXVzLXdlc3QtMiJIMEYCIQCDydLkC6k0bZRBtfZ%2F7T%2BUg9WpsSJluekMfq55c9IZyQIhAKJG8NNYU9TK7AewgVmkr1zaBNkBMoL5PgJjOY0cdw0pKu8CCKL%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQABoMNjY4NzQ0NzkyMTY5Igx3yrtiSALpxsUbMfYqwwLfH%2ByWgvHGT99Y34iGE3p2Sf2qSLUHRNEZ807Cnl92D7z9E6eb8AeAZnCMX0roZnewwsngKIfVc1kv4pRJKAeusLBw7vo7nDKsOOYHlUSCcDeYVApDSsf%2BxMV4D1nZobyRZfR3cBQVCdibnLlkdTb0YRlH5URYJECfwdgFy52I6PoLp2bvBe9HjvgARySvzCBT1qWSvQUsaA9cWYhLD8sNH4NPrO%2FKtg96uDCln0o0qqLZ%2B2yCJVZslKWDilc%2FDVkGqelQy7lI8WgQTgVn9dJtXP5lHVN0qXm7Zt2OKuY2t01ocEtT8XLkQtAdO%2FJBlOzqvI%2BIRNPaudt6WfZvQ2uuN%2B7NSju%2BUUV%2Bz%2FYZJDAQOja1%2B41mLbEIZtACMkSZJKlTO25YJ%2Bs%2B%2B8mOZtqNVvHUi2HTURZqP5ec%2FsJ6dLB%2F9IUcCTCEzsayBjqGAlhxUolx8uyZ7zWUQbEvD2n%2F%2B2EEEzpZwXVy%2BKSPW7ZlRd0walTYT9%2BAI%2FhSaiZS2h3qJWugOAg%2FPHUZh8%2BHB0zd0njhNm%2Bu700q7ooGlVFLmFs267V8HrG%2B0fe9cxjF08j2FN%2BWCaTWWo6wJShZ751RyrJDQ%2ByDAMLABmNEhK8XLrSqZ788wkruUAZZtQuRB0xBzjB0%2FHt2FwJQcyqXMokAhtwpY6bgb801SoYops2%2FT7MGBytEaruBmTra0lToBLJE3nY2KHviobl3L7Hhl8uyUnwWCOM8x%2Bf6DAm0l%2BtJmkRzTNmMknRsu9vnrBdc%2FpIPel30El3XwjAY%2BovY1YDNuis%2FNbw%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20240525T085502Z&X-Amz-SignedHeaders=host&X-Amz-Expires=43200&X-Amz-Credential=ASIAZXNCLXBU6HQVSRV7%2F20240525%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=947484960f5f953f811d6576baeb6bae6ea71cc700605c979323dd01420e6e16'
+          value: s3://data-on-eks-genai/scripts/train_script.py 
+        image: rayproject/ray-ml:2.11.0.a464b6-py311-cpu
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: 500m
+            memory: 200Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      preemptionPolicy: PreemptLowerPriority
+      priority: 0
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 300
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 300
+      volumes:
+        - name: code-sample
+          projected:   
+            defaultMode: 420
+            sources:  
+            - configMap:
+                items:
+                - key: sample_code.py
+                  path: sample_code.py
+                name: ray-job-code-sample.py
+        - name: kube-api-access-lsrd2
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                expirationSeconds: 3607
+                path: token
+            - configMap:
+                items:
+                - key: ca.crt
+                  path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace
+
+---
+apiVersion: v1
+data:
+  sample_code.py: |
+    import ray
+    import os
+    import requests
+
+    ray.init()
+
+    @ray.remote
+    class Counter:
+        def __init__(self):
+            # Used to verify runtimeEnv
+            self.name = os.getenv("counter_name")
+            assert self.name == "test_counter"
+            self.counter = 0
+
+        def inc(self):
+            self.counter += 1
+
+        def get_counter(self):
+            return "{} got {}".format(self.name, self.counter)
+
+    counter = Counter.remote()
+
+    for _ in range(5):
+        ray.get(counter.inc.remote())
+        print(ray.get(counter.get_counter.remote()))
+
+    # Verify that the correct runtime env was used for the job.
+    assert requests.__version__ == "2.26.0"
+kind: ConfigMap
+metadata:
+  name: ray-job-code-sample
+  namespace: ray-job-finetunning
