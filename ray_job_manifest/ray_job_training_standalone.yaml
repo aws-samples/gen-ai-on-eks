@@ -23,10 +23,10 @@ spec:
   entrypoint: "aws s3 cp s3://data-on-eks-genai/scripts/train_script.py train_script.py || true;chmod +x train_script.py && python train_script.py"
   
   # shutdownAfterJobFinishes specifies whether the RayCluster should be deleted after the RayJob finishes. Default is false.
-  shutdownAfterJobFinishes: true
+  # shutdownAfterJobFinishes: true
 
   # ttlSecondsAfterFinished specifies the number of seconds after which the RayCluster will be deleted after the RayJob finishes.
-  ttlSecondsAfterFinished: 10
+  # ttlSecondsAfterFinished: 60
 
   # activeDeadlineSeconds is the duration in seconds that the RayJob may be active before
   # KubeRay actively tries to terminate the RayJob; value must be positive integer.
@@ -50,11 +50,12 @@ spec:
   # Suspend specifies whether the RayJob controller should create a RayCluster instance.
   # If a job is applied with the suspend field set to true, the RayCluster will not be created and we will wait for the transition to false.
   # If the RayCluster is already created, it will be deleted. In the case of transition to false, a new RayCluster will be created.
-  # suspend: false
+  # suspend: true
 
   # rayClusterSpec specifies the RayCluster instance to be created by the RayJob controller.
   rayClusterSpec:
     rayVersion: '2.11.0' # should match the Ray version in the image of the containers
+    enableInTreeAutoscaling: true 
     # Ray head pod template
     headGroupSpec:
       # The `rayStartParams` are used to configure the `ray start` command.
@@ -89,7 +90,7 @@ spec:
                   name: client
                 - containerPort: 8000
                   name: serve
-              command: ["wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install"]
+              command: ["wget https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && unzip awscli-exe-linux-x86_64.zip && sudo ./aws/install;aws s3 cp s3://data-on-eks-genai/scripts/train_script.py train_script.py || true;chmod +x train_script.py && python train_script.py"]
           volumes:
             - name: log-volume
               emptyDir: {}
