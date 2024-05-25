@@ -20,7 +20,7 @@ spec:
         - "/bin/bash"
         - -c
         - "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- ls /var/run/mount/sample"
-        - "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- wget \'$(S3_URL)\' -O train_script.py '||' true';'chmod +x train_script.py '&&' python train_script.py"
+        # - "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- wget \'$(S3_URL)\' -O train_script.py '||' true';'chmod +x train_script.py '&&' python train_script.py"
         env:
         - name: runtime_env
           value: '{\"pip\":[\"ray\"\,\"datasets\"\,\"numpy\"\,\"evaluate\"\,\"boto3\"]}'
@@ -93,35 +93,100 @@ spec:
 ---
 apiVersion: v1
 data:
-  sample_code.py: |
-    import ray
+  train_script.py: |
     import os
-    import requests
 
-    ray.init()
+    import numpy as np
+    import evaluate
+    from datasets import load_dataset
+    from transformers import (
+        Trainer,
+        TrainingArguments,
+        AutoTokenizer,
+        AutoModelForSequenceClassification,
+    )
 
-    @ray.remote
-    class Counter:
-        def __init__(self):
-            # Used to verify runtimeEnv
-            self.name = os.getenv("counter_name")
-            assert self.name == "test_counter"
-            self.counter = 0
+    import ray.train.huggingface.transformers
+    from ray.train import ScalingConfig, RunConfig
+    from ray.train.torch import TorchTrainer
 
-        def inc(self):
-            self.counter += 1
+    # Variables
+    s3_name_checkpoints = "data-on-eks-genai"
+    storage_path=f"s3://{s3_name_checkpoints}/checkpoints/"
 
-        def get_counter(self):
-            return "{} got {}".format(self.name, self.counter)
+    def train_func():
+        # Datasets
+        dataset = load_dataset("yelp_review_full") # This is the dataset that we are using for train
+        tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 
-    counter = Counter.remote()
+        def tokenize_function(examples):
+            return tokenizer(examples["text"], padding="max_length", truncation=True)
 
-    for _ in range(5):
-        ray.get(counter.inc.remote())
-        print(ray.get(counter.get_counter.remote()))
+        small_train_dataset = (
+            dataset["train"].select(range(1000)).map(tokenize_function, batched=True)
+        )
+        small_eval_dataset = (
+            dataset["test"].select(range(1000)).map(tokenize_function, batched=True)
+        )
 
-    # Verify that the correct runtime env was used for the job.
-    assert requests.__version__ == "2.26.0"
+        # Model
+        model = AutoModelForSequenceClassification.from_pretrained(
+            "bert-base-cased", num_labels=5
+        )
+
+        # Evaluation Metrics
+        metric = evaluate.load("accuracy")
+
+        def compute_metrics(eval_pred):
+            logits, labels = eval_pred
+            predictions = np.argmax(logits, axis=-1)
+            return metric.compute(predictions=predictions, references=labels)
+
+        # Hugging Face Trainer
+        training_args = TrainingArguments(
+            output_dir="test_trainer",
+            evaluation_strategy="epoch",
+            save_strategy="epoch",
+            report_to="none",
+        )
+
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=small_train_dataset,
+            eval_dataset=small_eval_dataset,
+            compute_metrics=compute_metrics,
+        )
+
+        # [2] Report Metrics and Checkpoints to Ray Train
+        # ===============================================
+        callback = ray.train.huggingface.transformers.RayTrainReportCallback()
+        trainer.add_callback(callback)
+
+        # [3] Prepare Transformers Trainer
+        # ================================
+        trainer = ray.train.huggingface.transformers.prepare_trainer(trainer)
+
+        # Start Training
+        trainer.train()
+
+
+    # [4] Define a Ray TorchTrainer to launch `train_func` on all workers
+    # ===================================================================
+    ray_trainer = TorchTrainer(
+        train_func,
+        scaling_config=ScalingConfig(num_workers=2, use_gpu=True),
+        run_config=RunConfig(
+            storage_path=storage_path,
+            name="bert_experiment",
+        )
+        # [4a] If running in a multi-node cluster, this is where you
+        # should configure the run's persistent storage that is accessible
+        # across all worker nodes.
+        # run_config=ray.train.RunConfig(storage_path="s3://..."),
+    )
+
+    ray_trainer.fit()
 kind: ConfigMap
 metadata:
   name: ray-job-code-sample
