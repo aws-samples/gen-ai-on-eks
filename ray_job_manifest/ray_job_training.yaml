@@ -15,7 +15,7 @@ spec:
             name: kube-api-access-lsrd2
             readOnly: true
           - mountPath: /var/run/mount/sample
-            name: code-sample
+            name: training-script
         command:
         - "/bin/bash"
         - -c
@@ -62,15 +62,15 @@ spec:
         operator: Exists
         tolerationSeconds: 300
       volumes:
-        - name: code-sample
+        - name: training-script
           projected:   
             defaultMode: 420
             sources:  
             - configMap:
                 items:
-                - key: sample_code.py
-                  path: sample_code.py
-                name: ray-job-code-sample.py
+                - key: train_script.py
+                  path: train_script.py
+                name: ray-job-finetunning-cm
         - name: kube-api-access-lsrd2
           projected:
             defaultMode: 420
@@ -189,5 +189,5 @@ data:
     ray_trainer.fit()
 kind: ConfigMap
 metadata:
-  name: ray-job-code-sample
-  namespace: ray-job-finetunning
+  name: ray-job-finetunning-cm
+  namespace: ray-cluster-train
