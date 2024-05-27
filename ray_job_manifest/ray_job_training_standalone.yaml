@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ray-job-finetunning
+  name: ray-job-finetnning
 
 ---
 
@@ -13,8 +13,8 @@ metadata:
 apiVersion: ray.io/v1
 kind: RayJob
 metadata:
-  name: ray-job-finetunning
-  namespace: ray-job-finetunning
+  name: ray-job-finetuning
+  namespace: ray-job-finetuning
 spec:
   # submissionMode specifies how RayJob submits the Ray job to the RayCluster.
   # The default value is "K8sJobMode", meaning RayJob will submit the Ray job via a submitter Kubernetes Job.
@@ -103,7 +103,7 @@ spec:
             - name: training-script
               configMap:
                 # Provide the name of the ConfigMap you want to mount.
-                name: "finetunning-cm"
+                name: "finetuning-cm"
                 # An array of keys from the ConfigMap to create as files
                 items:
                   - key: train_script.py
@@ -265,7 +265,7 @@ data:
 
 kind: ConfigMap
 metadata:
-  name: finetunning-cm
-  namespace: ray-job-finetunning
+  name: finetuning-cm
+  namespace: ray-job-finetuning
 
 

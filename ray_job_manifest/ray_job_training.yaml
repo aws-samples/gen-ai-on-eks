@@ -1,12 +1,12 @@
 ############################################################################################
-# This manifest launches a new job in an existing RayCluster to perfrom the fine tunning.
-# By default use the default Raycluster ray-cluster-train
+# This manifest launches a new job in an existing RayCluster to perform the fine tuning.
+# By default use the default existing Raycluster in ray-cluster-train
 ############################################################################################
 
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ray-job-finetunning
+  name: ray-job-finetuning
   namespace: ray-cluster-train
 spec:
   ttlSecondsAfterFinished: 20
@@ -23,8 +23,8 @@ spec:
         command:
         - "/bin/bash"
         - -c
-        - "ray job submit --working-dir ./script --address $(RAY_DASHBOARD_ADDRESS)  --entrypoint-num-cpus 6 --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- chmod +x train_script.py '&&' python train_script.py"
-        #- "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- aws s3 cp s3://data-on-eks-genai/scripts/train_script.py train_script.py '||' true';'chmod +x train_script.py '&&' python train_script.py"
+        - "ray job submit --working-dir ./script --address $(RAY_DASHBOARD_ADDRESS)  --entrypoint-num-cpus 6 --runtime-env-json $(runtime_env)  --submission-id ray-job-finetuning-$EPOCHSECONDS -- chmod +x train_script.py '&&' python train_script.py"
+        #- "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetuning-$EPOCHSECONDS -- aws s3 cp s3://data-on-eks-genai/scripts/train_script.py train_script.py '||' true';'chmod +x train_script.py '&&' python train_script.py"
         env:
         - name: runtime_env
           value: '{\"pip\":[\"ray\"\,\"datasets\"\,\"numpy\"\,\"evaluate\"\,\"boto3\"]}'
@@ -70,7 +70,7 @@ spec:
             defaultMode: 0777
             sources:  
             - configMap:
-                name: "finetunning-cm"
+                name: "finetuning-cm"
                 items:
                 - key: train_script.py
                   path: train_script.py
@@ -196,5 +196,5 @@ data:
 
 kind: ConfigMap
 metadata:
-  name: finetunning-cm
+  name: finetuning-cm
   namespace: ray-cluster-train
