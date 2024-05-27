@@ -1,3 +1,8 @@
+############################################################################################
+# This manifest launches a new job in an existing RayCluster to perfrom the fine tunning.
+# By default use the default Raycluster ray-cluster-train
+############################################################################################
+
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -9,18 +14,17 @@ spec:
     spec:
       containers:
       - name: ray-job-submitter
-        #command: ["/bin/sh",  "-c"]
         volumeMounts:
+          - mountPath: /home/ray/script
+            name: training-script
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access-lsrd2
             readOnly: true
-          - mountPath: /var/run/mount/sample
-            name: training-script
         command:
         - "/bin/bash"
         - -c
-        - "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- ls /var/run/mount/sample"
-        # - "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- wget \'$(S3_URL)\' -O train_script.py '||' true';'chmod +x train_script.py '&&' python train_script.py"
+        - "ray job submit --working-dir ./script --address $(RAY_DASHBOARD_ADDRESS)  --entrypoint-num-cpus 6 --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- chmod +x train_script.py '&&' python train_script.py"
+        #- "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetunning-$EPOCHSECONDS -- aws s3 cp s3://data-on-eks-genai/scripts/train_script.py train_script.py '||' true';'chmod +x train_script.py '&&' python train_script.py"
         env:
         - name: runtime_env
           value: '{\"pip\":[\"ray\"\,\"datasets\"\,\"numpy\"\,\"evaluate\"\,\"boto3\"]}'
@@ -29,13 +33,12 @@ spec:
         - name: RAY_DASHBOARD_ADDRESS
           value: http://ray-cluster-train-kuberay-head-svc.ray-cluster-train.svc.cluster.local:8265
         - name: S3_URL
-          #value: 'https://data-on-eks-genai.s3.us-west-2.amazonaws.com/scripts/train_script.py?response-content-disposition=inline&X-Amz-Security-Token=IQoJb3JpZ2luX2VjECkaCXVzLXdlc3QtMiJIMEYCIQCDydLkC6k0bZRBtfZ%2F7T%2BUg9WpsSJluekMfq55c9IZyQIhAKJG8NNYU9TK7AewgVmkr1zaBNkBMoL5PgJjOY0cdw0pKu8CCKL%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQABoMNjY4NzQ0NzkyMTY5Igx3yrtiSALpxsUbMfYqwwLfH%2ByWgvHGT99Y34iGE3p2Sf2qSLUHRNEZ807Cnl92D7z9E6eb8AeAZnCMX0roZnewwsngKIfVc1kv4pRJKAeusLBw7vo7nDKsOOYHlUSCcDeYVApDSsf%2BxMV4D1nZobyRZfR3cBQVCdibnLlkdTb0YRlH5URYJECfwdgFy52I6PoLp2bvBe9HjvgARySvzCBT1qWSvQUsaA9cWYhLD8sNH4NPrO%2FKtg96uDCln0o0qqLZ%2B2yCJVZslKWDilc%2FDVkGqelQy7lI8WgQTgVn9dJtXP5lHVN0qXm7Zt2OKuY2t01ocEtT8XLkQtAdO%2FJBlOzqvI%2BIRNPaudt6WfZvQ2uuN%2B7NSju%2BUUV%2Bz%2FYZJDAQOja1%2B41mLbEIZtACMkSZJKlTO25YJ%2Bs%2B%2B8mOZtqNVvHUi2HTURZqP5ec%2FsJ6dLB%2F9IUcCTCEzsayBjqGAlhxUolx8uyZ7zWUQbEvD2n%2F%2B2EEEzpZwXVy%2BKSPW7ZlRd0walTYT9%2BAI%2FhSaiZS2h3qJWugOAg%2FPHUZh8%2BHB0zd0njhNm%2Bu700q7ooGlVFLmFs267V8HrG%2B0fe9cxjF08j2FN%2BWCaTWWo6wJShZ751RyrJDQ%2ByDAMLABmNEhK8XLrSqZ788wkruUAZZtQuRB0xBzjB0%2FHt2FwJQcyqXMokAhtwpY6bgb801SoYops2%2FT7MGBytEaruBmTra0lToBLJE3nY2KHviobl3L7Hhl8uyUnwWCOM8x%2Bf6DAm0l%2BtJmkRzTNmMknRsu9vnrBdc%2FpIPel30El3XwjAY%2BovY1YDNuis%2FNbw%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20240525T085502Z&X-Amz-SignedHeaders=host&X-Amz-Expires=43200&X-Amz-Credential=ASIAZXNCLXBU6HQVSRV7%2F20240525%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=947484960f5f953f811d6576baeb6bae6ea71cc700605c979323dd01420e6e16'
           value: s3://data-on-eks-genai/scripts/train_script.py 
         image: rayproject/ray-ml:2.11.0.a464b6-py311-cpu
         imagePullPolicy: IfNotPresent
         resources:
           limits:
-            cpu: "1"
+            cpu: "2"
             memory: 1Gi
           requests:
             cpu: 500m
@@ -64,13 +67,13 @@ spec:
       volumes:
         - name: training-script
           projected:   
-            defaultMode: 420
+            defaultMode: 0777
             sources:  
             - configMap:
+                name: "finetunning-cm"
                 items:
                 - key: train_script.py
                   path: train_script.py
-                name: ray-job-finetunning-cm
         - name: kube-api-access-lsrd2
           projected:
             defaultMode: 420
@@ -90,12 +93,15 @@ spec:
                     fieldPath: metadata.namespace
                   path: namespace
 
+
+#################################################
+#Add the train_script.py into the next configmap
+#################################################
 ---
 apiVersion: v1
 data:
   train_script.py: |
     import os
-
     import numpy as np
     import evaluate
     from datasets import load_dataset
@@ -187,7 +193,8 @@ data:
     )
 
     ray_trainer.fit()
+
 kind: ConfigMap
 metadata:
-  name: ray-job-finetunning-cm
+  name: finetunning-cm
   namespace: ray-cluster-train
