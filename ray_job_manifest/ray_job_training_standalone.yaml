@@ -1,8 +1,7 @@
-################################################################################################################
-#This manifest can be used to serrve applications using GPU instances
-#This resources are provisioned using the CRDs (RayService, RayCluster, RayJob)  created by the KubeRay operator
-################################################################################################################
-apiVersion: v1
+####################################################################################
+#This manifest launches a new RayCluster using GPU instances.
+#When the job is completed the cluster resources are deleted for cost optimization
+####################################################################################
 kind: Namespace
 metadata:
   name: ray-job-finetnning
