@@ -24,7 +24,13 @@ Select [X] the GPU Server profile in JupyterHub and click in `Start`.
 
 Now wait for the Server to start up.
 
-## Downloading Notebook
+## Option 1: Selecting the testing Notebook
+
+In the left panel there is a "notebooks" folder. You have to choose the Notebook named "`<model>`-training.ipynb" and copy it into the root folder because the "notebooks" folder in exposed as a read-only filesystem to keep the original files.
+
+Now you can follow the steps on Jupyter Notebook.
+
+##  Option 2: Downloading Notebook
 
 We already have developed a Jupyter Notebook with the steps to craft a train and serving script, let's start by openning a `Terminal` window in our Jupyter console and downloading our script from GitHub:
 
