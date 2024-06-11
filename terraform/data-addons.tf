@@ -228,7 +228,7 @@ module "eks_blueprints_helm_install" {
   helm_releases = {
     ray-cluster-train = {
       description      = "A Helm chart for RAY operator"
-      namespace        = "ray-cluster-train"
+      namespace        = "ray-cluster-train-dev"
       create_namespace = true
       chart            = "ray-cluster"
       chart_version    = "1.1.0"
