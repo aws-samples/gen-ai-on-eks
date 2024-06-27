@@ -1,3 +1,58 @@
+#---------------------------------------------------------------
+# GP3 Encrypted Storage Class
+#---------------------------------------------------------------
+resource "kubernetes_annotations" "disable_gp2" {
+  annotations = {
+    "storageclass.kubernetes.io/is-default-class" : "false"
+  }
+  api_version = "storage.k8s.io/v1"
+  kind        = "StorageClass"
+  metadata {
+    name = "gp2"
+  }
+  force = true
+
+  depends_on = [module.eks.eks_cluster_id]
+}
+
+resource "kubernetes_storage_class" "default_gp3" {
+  metadata {
+    name = "gp3"
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" : "true"
+    }
+  }
+
+  storage_provisioner    = "ebs.csi.aws.com"
+  reclaim_policy         = "Delete"
+  allow_volume_expansion = true
+  volume_binding_mode    = "WaitForFirstConsumer"
+  parameters = {
+    fsType    = "ext4"
+    encrypted = true
+    type      = "gp3"
+  }
+
+  depends_on = [kubernetes_annotations.disable_gp2]
+}
+
+#---------------------------------------------------------------
+# IRSA for EBS CSI Driver
+#---------------------------------------------------------------
+module "ebs_csi_driver_irsa" {
+  source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version               = "~> 5.39"
+  role_name_prefix      = format("%s-%s-", local.name, "ebs-csi-driver")
+  attach_ebs_csi_policy = true
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+    }
+  }
+  tags = local.tags
+}
+
 ################################################################################
 # Karpenter Needed resources and permissions
 ################################################################################
@@ -48,171 +103,74 @@ resource "aws_s3_bucket" "fm_ops_data" {
   }
 }
 
+
+
 ################################################################################
 # EKS Blueprints add-ons
 ################################################################################
 module "eks_blueprints_addons" {
-  source            = "github.com/aws-ia/terraform-aws-eks-blueprints-addons?ref=v1.2.2"
+  source  = "aws-ia/eks-blueprints-addons/aws"
+  version = "~> 1.16.2"
+
   cluster_name      = module.eks.cluster_name
   cluster_endpoint  = module.eks.cluster_endpoint
   cluster_version   = module.eks.cluster_version
   oidc_provider_arn = module.eks.oidc_provider_arn
 
-  enable_aws_efs_csi_driver           = true # Will be used for Jupyter Notebooks and DAG on Apache Airflow
+  #---------------------------------------
+  # Amazon EKS Managed Add-ons
+  #---------------------------------------
+  eks_addons = {
+    aws-ebs-csi-driver = {
+      service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
+    }
+    coredns = {
+      preserve = true
+    }
+    kube-proxy = {
+      preserve = true
+    }
+    # VPC CNI uses worker node IAM role policies
+    vpc-cni = {
+      preserve = true
+    }
+  }
+
+  #---------------------------------------
+  # AWS Load Balancer Controller Add-on
+  #---------------------------------------
   enable_aws_load_balancer_controller = true
-  enable_karpenter                    = true
+  # turn off the mutating webhook for services because we are using
+  # service.beta.kubernetes.io/aws-load-balancer-type: external
+  aws_load_balancer_controller = {
+    set = [{
+      name  = "enableServiceMutatorWebhook"
+      value = "false"
+    }]
+  }
+
+  #---------------------------------------
+  # Ingress Nginx Add-on
+  #---------------------------------------
+  enable_ingress_nginx = true
+  ingress_nginx = {
+    values = [templatefile("${path.module}/helm-values/ingress-nginx-values.yaml", {})]
+  }
+
+  #---------------------------------------
+  # Karpenter Autoscaler for EKS Cluster
+  #---------------------------------------
+  enable_karpenter                  = true
+  karpenter_enable_spot_termination = true
+  karpenter_node = {
+    iam_role_additional_policies = {
+      AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    }
+  }
   karpenter = {
+    chart_version       = "0.35.4"
     repository_username = data.aws_ecrpublic_authorization_token.token.user_name
     repository_password = data.aws_ecrpublic_authorization_token.token.password
   }
-  karpenter_enable_spot_termination = true
-  enable_metrics_server             = true
-  enable_kube_prometheus_stack      = true
-
-  helm_releases = {
-    gpu-operator = {
-      description      = "A Helm chart for NVIDIA GPU operator"
-      namespace        = "gpu-operator"
-      create_namespace = true
-      chart            = "gpu-operator"
-      chart_version    = "v23.3.2"
-      repository       = "https://helm.ngc.nvidia.com/nvidia"
-      values           = [file(var.nvidia_gpu_values_path)]
-    }
-    jupyter-hub = {
-      description      = "A Helm chart for JupyterHub"
-      namespace        = "jupyterhub"
-      create_namespace = false
-      chart            = "jupyterhub"
-      chart_version    = "2.0.0"
-      repository       = "https://jupyterhub.github.io/helm-chart/"
-      values = [templatefile(var.jupyter_hub_values_path, {
-        jupyter_single_user_sa_name = kubernetes_service_account_v1.jupyterhub_single_user_sa.metadata[0].name
-      })]
-    }
-    ray-operator = {
-      description      = "A Helm chart for RAY operator"
-      namespace        = "kuberay-operator"
-      create_namespace = true
-      chart            = "kuberay-operator"
-      chart_version    = "0.6.0"
-      repository       = "https://ray-project.github.io/kuberay-helm/"
-    }
-    ray-cluster-train = {
-      description      = "A Helm chart for RAY operator"
-      namespace        = "ray-cluster-train"
-      create_namespace = true
-      chart            = "ray-cluster"
-      chart_version    = "0.5.0"
-      repository       = "https://ray-project.github.io/kuberay-helm/"
-      values           = [file(var.kuberay_cluster_train_values_path)]
-    }
-    # apache-airflow = {
-    #   description      = "A Helm chart for Apache Airflow"
-    #   namespace        = kubernetes_namespace_v1.airflow.metadata[0].name
-    #   create_namespace = false
-    #   chart            = "airflow"
-    #   chart_version    = "1.9.0"
-    #   repository       = "https://airflow.apache.org"
-    #   values = [templatefile(var.apache_airflow_values_path, {
-    #     airflow_version       = "2.6.3"
-    #     airflow_db_user       = var.airflow_name
-    #     airflow_db_pass       = try(sensitive(aws_secretsmanager_secret_version.postgres.secret_string), "")
-    #     airflow_db_host       = try(element(split(":", module.db.db_instance_endpoint), 0), "")
-    #     airflow_db_name       = try(module.db.db_instance_name, "")
-    #     webserver_secret_name = "airflow-webserver-secret-key"
-
-    #     airflow_workers_service_account_name   = kubernetes_service_account_v1.airflow_worker.metadata[0].name
-    #     airflow_scheduler_service_account_name = kubernetes_service_account_v1.airflow_scheduler.metadata[0].name
-    #     webserver_service_account_name         = kubernetes_service_account_v1.airflow_webserver.metadata[0].name
-    #     s3_bucket_name                         = try(module.airflow_s3_bucket.s3_bucket_id, "")
-    #     efs_pvc                                = "airflowdags-pvc"
-    #   })]
-    # }
-    karpenter-resources-default = {
-      name        = "karpenter-resources-default"
-      description = "A Helm chart for karpenter CPU based resources"
-      chart       = "${path.module}/helm-values/karpenter-resources"
-      values = [
-        <<-EOT
-          clusterName: ${module.eks.cluster_name}
-          taints: []
-          labels: []
-        EOT
-      ]
-    }
-    karpenter-resources-cpu = {
-      name        = "karpenter-resources-cpu"
-      description = "A Helm chart for karpenter CPU based resources"
-      chart       = "${path.module}/helm-values/karpenter-resources"
-      values = [
-        <<-EOT
-          name: default-jupyter
-          clusterName: ${module.eks.cluster_name}
-        EOT
-      ]
-    }
-    karpenter-resources-ts = {
-      name        = "karpenter-resources-ts"
-      description = "A Helm chart for karpenter GPU based resources - compatible with GPU time slicing"
-      chart       = "${path.module}/helm-values/karpenter-resources"
-      values = [
-        <<-EOT
-          name: gpu-ts
-          clusterName: ${module.eks.cluster_name}
-          instanceSizes: ["xlarge", "2xlarge", "4xlarge", "8xlarge", "16xlarge", "24xlarge"]
-          instanceFamilies: ["g5"]
-          deviceName: /dev/sda1
-          taints:
-            - key: hub.jupyter.org/dedicated
-              value: "user"
-              effect: "NoSchedule"
-            - key: nvidia.com/gpu
-              effect: "NoSchedule"
-          amiFamily: Ubuntu
-        EOT
-      ]
-    }
-    karpenter-resources-ray-serve = {
-      name        = "karpenter-resources-ray-serve"
-      description = "A Helm chart for karpenter ray serve based resources"
-      chart       = "${path.module}/helm-values/karpenter-resources"
-      values = [
-        <<-EOT
-          name: gpu-serve-ray
-          clusterName: ${module.eks.cluster_name}
-          instanceSizes: ["xlarge", "2xlarge", "4xlarge", "8xlarge", "16xlarge", "24xlarge"]
-          instanceFamilies: ["g5"]
-          deviceName: /dev/sda1
-          labels: []
-          taints:
-            - key: nvidia.com/gpu
-              effect: "NoSchedule"
-          amiFamily: Ubuntu
-        EOT
-      ]
-    }
-    karpenter-resources-ray-train = {
-      name        = "karpenter-resources-ray-train"
-      description = "A Helm chart for karpenter Trainium based resources"
-      chart       = "${path.module}/helm-values/karpenter-resources"
-      values = [
-        <<-EOT
-          name: gpu-train-ray
-          clusterName: ${module.eks.cluster_name}
-          instanceSizes: ["2xlarge", "4xlarge"]
-          instanceFamilies: ["g5"]
-          deviceName: /dev/sda1
-          labels: []
-          taints:
-            - key: nvidia.com/gpu
-              effect: "NoSchedule"
-          amiFamily: Ubuntu
-        EOT
-      ]
-    }
-  }
-
-  tags = local.tags
-
 }
+

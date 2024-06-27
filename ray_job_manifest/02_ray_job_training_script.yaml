@@ -1,0 +1,200 @@
+############################################################################################
+# This manifest launches a new job in an existing RayCluster to perform the fine tuning.
+# By default use the default existing Raycluster in ray-cluster-train
+############################################################################################
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-job-finetuning
+  namespace: ray-cluster-train
+spec:
+  ttlSecondsAfterFinished: 20
+  template:
+    spec:
+      containers:
+      - name: ray-job-submitter
+        volumeMounts:
+          - mountPath: /home/ray/script
+            name: training-script
+          - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            name: kube-api-access-lsrd2
+            readOnly: true
+        command:
+        - "/bin/bash"
+        - -c
+        - "ray job submit --working-dir ./script --address $(RAY_DASHBOARD_ADDRESS)  --entrypoint-num-cpus 6 --runtime-env-json $(runtime_env)  --submission-id ray-job-finetuning-$EPOCHSECONDS -- chmod +x train_script.py '&&' python train_script.py"
+        #- "ray job submit --address $(RAY_DASHBOARD_ADDRESS) --runtime-env-json $(runtime_env)  --submission-id ray-job-finetuning-$EPOCHSECONDS -- aws s3 cp s3://data-on-eks-genai/scripts/train_script.py train_script.py '||' true';'chmod +x train_script.py '&&' python train_script.py"
+        env:
+        - name: runtime_env
+          value: '{\"pip\":[\"ray\"\,\"datasets\"\,\"numpy\"\,\"evaluate\"\,\"boto3\"]}'
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: RAY_DASHBOARD_ADDRESS
+          value: http://ray-cluster-train-kuberay-head-svc.ray-cluster-train.svc.cluster.local:8265
+        - name: S3_URL
+          value: s3://data-on-eks-genai/scripts/train_script.py 
+        image: rayproject/ray-ml:2.11.0.a464b6-py311-cpu
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: "2"
+            memory: 1Gi
+          requests:
+            cpu: 500m
+            memory: 200Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      preemptionPolicy: PreemptLowerPriority
+      priority: 0
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 300
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 300
+      volumes:
+        - name: training-script
+          projected:   
+            defaultMode: 0777
+            sources:  
+            - configMap:
+                name: "finetuning-cm"
+                items:
+                - key: train_script.py
+                  path: train_script.py
+        - name: kube-api-access-lsrd2
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                expirationSeconds: 3607
+                path: token
+            - configMap:
+                items:
+                - key: ca.crt
+                  path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace
+
+
+#################################################
+#Add the train_script.py into the next configmap
+#################################################
+---
+apiVersion: v1
+data:
+  train_script.py: |
+    import os
+    import numpy as np
+    import evaluate
+    from datasets import load_dataset
+    from transformers import (
+        Trainer,
+        TrainingArguments,
+        AutoTokenizer,
+        AutoModelForSequenceClassification,
+    )
+
+    import ray.train.huggingface.transformers
+    from ray.train import ScalingConfig, RunConfig
+    from ray.train.torch import TorchTrainer
+
+    # Variables
+    s3_name_checkpoints = "data-on-eks-genai"
+    storage_path=f"s3://{s3_name_checkpoints}/checkpoints/"
+
+    def train_func():
+        # Datasets
+        dataset = load_dataset("yelp_review_full") # This is the dataset that we are using for train
+        tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+        def tokenize_function(examples):
+            return tokenizer(examples["text"], padding="max_length", truncation=True)
+
+        small_train_dataset = (
+            dataset["train"].select(range(1000)).map(tokenize_function, batched=True)
+        )
+        small_eval_dataset = (
+            dataset["test"].select(range(1000)).map(tokenize_function, batched=True)
+        )
+
+        # Model
+        model = AutoModelForSequenceClassification.from_pretrained(
+            "bert-base-cased", num_labels=5
+        )
+
+        # Evaluation Metrics
+        metric = evaluate.load("accuracy")
+
+        def compute_metrics(eval_pred):
+            logits, labels = eval_pred
+            predictions = np.argmax(logits, axis=-1)
+            return metric.compute(predictions=predictions, references=labels)
+
+        # Hugging Face Trainer
+        training_args = TrainingArguments(
+            output_dir="test_trainer",
+            evaluation_strategy="epoch",
+            save_strategy="epoch",
+            report_to="none",
+        )
+
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=small_train_dataset,
+            eval_dataset=small_eval_dataset,
+            compute_metrics=compute_metrics,
+        )
+
+        # [2] Report Metrics and Checkpoints to Ray Train
+        # ===============================================
+        callback = ray.train.huggingface.transformers.RayTrainReportCallback()
+        trainer.add_callback(callback)
+
+        # [3] Prepare Transformers Trainer
+        # ================================
+        trainer = ray.train.huggingface.transformers.prepare_trainer(trainer)
+
+        # Start Training
+        trainer.train()
+
+
+    # [4] Define a Ray TorchTrainer to launch `train_func` on all workers
+    # ===================================================================
+    ray_trainer = TorchTrainer(
+        train_func,
+        scaling_config=ScalingConfig(num_workers=2, use_gpu=True),
+        run_config=RunConfig(
+            storage_path=storage_path,
+            name="bert_experiment",
+        )
+        # [4a] If running in a multi-node cluster, this is where you
+        # should configure the run's persistent storage that is accessible
+        # across all worker nodes.
+        # run_config=ray.train.RunConfig(storage_path="s3://..."),
+    )
+
+    ray_trainer.fit()
+
+kind: ConfigMap
+metadata:
+  name: finetuning-cm
+  namespace: ray-cluster-train

@@ -5,12 +5,16 @@ locals {
   partition  = data.aws_partition.current.partition
 
   vpc_cidr = var.vpc_cidr
-  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+  azs      = slice(data.aws_availability_zones.available.names, 0, 2)
 
-  tags = {
+  private_subnets    = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 3, k)]
+  public_subnets     = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 5, k + 8)]
+  secondary_ip_range = [for k, v in local.azs : cidrsubnet(element(var.secondary_cidr_blocks, 0), 1, k)]
+
+  tags = merge(var.tags, {
     Sample     = var.name
     GithubRepo = "github.com/aws-samples/gen-ai-on-eks"
-  }
+  })
 }
 
 data "aws_region" "current" {}
@@ -35,17 +39,13 @@ module "vpc" {
 
   name = local.name
   cidr = local.vpc_cidr
+  azs  = local.azs
 
-  azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
-  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
-
-  database_subnets                   = var.db_private_subnets
-  create_database_subnet_group       = true
-  create_database_subnet_route_table = true
-
-  enable_nat_gateway = true
-  single_nat_gateway = true
+  secondary_cidr_blocks = var.secondary_cidr_blocks
+  private_subnets       = concat(local.private_subnets, local.secondary_ip_range)
+  public_subnets        = local.public_subnets
+  enable_nat_gateway    = true
+  single_nat_gateway    = true
 
   public_subnet_tags = {
     "kubernetes.io/role/elb" = 1
@@ -53,28 +53,10 @@ module "vpc" {
 
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = 1
-    # Tags subnets for Karpenter auto-discovery, force to use only private subnets
-    "karpenter.sh/discovery" = local.name
+    "karpenter.sh/discovery"          = local.name
   }
 
   tags = local.tags
-}
-
-# Role needed for EBS CSI Driver
-module "ebs_csi_irsa_role" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.30"
-
-  role_name = "ebs-csi-fmops"
-
-  attach_ebs_csi_policy = true
-
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
-    }
-  }
 }
 
 
@@ -90,8 +72,9 @@ module "eks" {
   cluster_version                = var.cluster_version
   cluster_endpoint_public_access = true
 
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
+  vpc_id = module.vpc.vpc_id
+  subnet_ids = compact([for subnet_id, cidr_block in zipmap(module.vpc.private_subnets, module.vpc.private_subnets_cidr_blocks) :
+  substr(cidr_block, 0, 4) == "100." ? subnet_id : null])
 
   manage_aws_auth_configmap = true
 
@@ -107,30 +90,111 @@ module "eks" {
     },
   ]
 
-  cluster_addons = {
-
-    aws-ebs-csi-driver = {
-      service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
-      most_recent              = true
-    }
-    coredns = {
-      most_recent = true
-    }
-    kube-proxy = {
-      most_recent = true
-    }
-    vpc-cni = {
-      most_recent = true
+  cluster_security_group_additional_rules = {
+    ingress_nodes_ephemeral_ports_tcp = {
+      description                = "Nodes on ephemeral ports"
+      protocol                   = "tcp"
+      from_port                  = 0
+      to_port                    = 65535
+      type                       = "ingress"
+      source_node_security_group = true
     }
   }
 
+  node_security_group_additional_rules = {
+    # Allows Control Plane Nodes to talk to Worker nodes on all ports.
+    # Added this to simplify the example and further avoid issues with Add-ons communication with Control plane.
+    # This can be restricted further to specific port based on the requirement for each Add-on
+    # e.g., coreDNS 53, metrics-server 4443.
+    # Update this according to your security requirements if needed
+    ingress_cluster_to_node_all_traffic = {
+      description                   = "Cluster API to Nodegroup all traffic"
+      protocol                      = "-1"
+      from_port                     = 0
+      to_port                       = 0
+      type                          = "ingress"
+      source_cluster_security_group = true
+    }
+  }
+
+  eks_managed_node_group_defaults = {
+    iam_role_additional_policies = {
+      # Not required, but used in the example to access the nodes to inspect mounted volumes
+      AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    }
+    ebs_optimized = true
+    block_device_mappings = {
+      xvda = {
+        device_name = "/dev/xvda"
+        ebs = {
+          volume_size = 100
+          volume_type = "gp3"
+        }
+      }
+    }
+  }
+
+
   # Baseline nodes to run add-ons
   eks_managed_node_groups = {
-    baseline-infra = {
-      instance_types = ["m5.large"]
-      min_size       = 2
-      max_size       = 2
-      desired_size   = 2
+    core_node_group = {
+      name        = "core-node-group"
+      description = "EKS Core node group for hosting system add-ons"
+      # Filtering only Secondary CIDR private subnets starting with "100.".
+      # Subnet IDs where the nodes/node groups will be provisioned
+      subnet_ids = compact([for subnet_id, cidr_block in zipmap(module.vpc.private_subnets, module.vpc.private_subnets_cidr_blocks) :
+        substr(cidr_block, 0, 4) == "100." ? subnet_id : null]
+      )
+
+      # aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.27/amazon-linux-2/recommended/image_id --region us-west-2
+      ami_type     = "AL2_x86_64" # Use this for Graviton AL2_ARM_64
+      min_size     = 2
+      max_size     = 8
+      desired_size = 2
+
+      instance_types = ["m5.xlarge"]
+
+      labels = {
+        WorkerType    = "ON_DEMAND"
+        NodeGroupType = "core"
+      }
+
+      tags = merge(local.tags, {
+        Name = "core-node-grp"
+      })
+    }
+    gpu1 = {
+      name        = "gpu-node-grp"
+      description = "EKS Node Group to run GPU workloads"
+      # Filtering only Secondary CIDR private subnets starting with "100.".
+      # Subnet IDs where the nodes/node groups will be provisioned
+      subnet_ids = compact([for subnet_id, cidr_block in zipmap(module.vpc.private_subnets, module.vpc.private_subnets_cidr_blocks) :
+        substr(cidr_block, 0, 4) == "100." ? subnet_id : null]
+      )
+
+      ami_type     = "AL2_x86_64_GPU"
+      min_size     = 0
+      max_size     = 1
+      desired_size = 0
+
+      instance_types = ["g5.12xlarge"]
+
+      labels = {
+        WorkerType    = "ON_DEMAND"
+        NodeGroupType = "gpu"
+      }
+
+      taints = {
+        gpu = {
+          key      = "nvidia.com/gpu"
+          effect   = "NO_SCHEDULE"
+          operator = "EXISTS"
+        }
+      }
+
+      tags = merge(local.tags, {
+        Name = "gpu-node-grp"
+      })
     }
   }
 

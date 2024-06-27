@@ -1,0 +1,93 @@
+hub:
+  config:
+    Authenticator:
+      admin_users:
+        - admin1
+      allowed_users:
+        - user1
+    # testing only - do not do this for production
+    DummyAuthenticator:
+      password: never-do-this
+    JupyterHub:
+      authenticator_class: dummy
+proxy:
+  service:
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internal # Private Load Balancer can only be accessed within the VPC
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+      service.beta.kubernetes.io/aws-load-balancer-ip-address-type: ipv4
+singleuser:
+  startTimeout: 1200
+  profileList:
+    - display_name: Data Engineering (CPU)
+      description: "PySpark Notebooks with CPU only"
+      kubespawner_override:
+        image: jupyter/scipy-notebook:python-3.10.11
+        cpu_guarantee: 2
+        mem_guarantee: 8G
+        cpu_limit: 4
+        mem_limit: 8G
+      cmd: null
+    - display_name: Data Engineering (GPU)
+      description: " Notebooks with GPU Timeslicing only"
+      kubespawner_override:
+        image: quay.io/jupyter/pytorch-notebook:cuda12-python-3.11.8
+        tolerations:
+          - key: "nvidia.com/gpu"
+            operator: "Exists"
+            effect: "NoSchedule"
+        extra_resource_limits:
+          nvidia.com/gpu: "1" # TIME-SLICING: Use a slice of GPU using time-slicing mode
+        cpu_limit: 2
+        mem_limit: 4G
+        cpu_guarantee: 2
+        mem_guarantee: 4G
+        cmd: "start-singleuser.sh"
+  memory:
+    guarantee: 24G
+  extraResource:
+    limits:
+      nvidia.com/gpu: "1"
+  extraEnv:
+    GRANT_SUDO: "yes"
+    NOTEBOOK_ARGS: "--allow-root"
+    CHOWN_HOME: "yes"
+    CHOWN_HOME_OPTS: "-R"
+    CHOWN_EXTRA: "/home/jovyan/notebooks"
+    HUGGING_FACE_HUB_TOKEN:
+      valueFrom:
+        secretKeyRef:
+          name: hf-token
+          key: token
+  storage:
+    dynamic:
+      storageClass: gp3
+    extraVolumes:
+      - name: notebook
+        configMap:
+          name: notebook
+    extraVolumeMounts:
+      - name: notebook
+        mountPath: /home/jovyan/notebooks
+  allowPrivilegeEscalation: true
+  serviceAccountName: ${jupyter_single_user_sa_name}
+
+prePuller: # Disable hooks
+  hook:
+    enabled: false
+  continuous:
+    enabled: false
+
+scheduling:
+  userScheduler:
+    enabled: false
+  podPriority:
+    enabled: true
+  userPlaceholder:
+    enabled: false
+    replicas: 1
+  userPods:
+    nodeAffinity:
+      matchNodePurpose: prefer

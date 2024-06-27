@@ -4,17 +4,21 @@ variable "aws_region" {
   default     = null
 }
 
+# VPC with 2046 IPs (10.1.0.0/21) and 2 AZs
 variable "vpc_cidr" {
-  description = "CIDR block for the VPC to be created."
+  description = "VPC CIDR. This should be a valid private (RFC 1918) CIDR range"
+  default     = "10.1.0.0/21"
   type        = string
-  default     = "10.8.0.0/16"
 }
 
-variable "db_private_subnets" {
-  description = "Private Subnets CIDRs. 254 IPs per Subnet/AZ for Airflow DB."
+# RFC6598 range 100.64.0.0/10
+# Note you can only /16 range to VPC. You can add multiples of /16 if required
+variable "secondary_cidr_blocks" {
+  description = "Secondary CIDR blocks to be attached to VPC"
+  default     = ["100.64.0.0/16"]
   type        = list(string)
-  default     = ["10.8.51.0/26", "10.8.52.0/26"]
 }
+
 
 variable "name" {
   description = "Name to be added to the modules and resources."
@@ -25,39 +29,25 @@ variable "name" {
 variable "cluster_version" {
   description = "Amazon EKS Cluster version."
   type        = string
-  default     = "1.27"
+  default     = "1.29"
 }
 
-variable "jupyter_hub_values_path" {
-  description = "Path for JupyterHub Helm values file."
-  type        = string
-  default     = "helm-values/jupyterhub-profiles-values.yaml"
+
+variable "enable_aws_efa_k8s_device_plugin" {
+  description = "Enable AWS EFA K8s Device Plugin"
+  type        = bool
+  default     = false
 }
 
-variable "kuberay_cluster_train_values_path" {
-  description = "Path for KubeRay Helm values file."
+variable "huggingface_token" {
+  description = "Hugging Face Secret Token"
   type        = string
-  default     = "helm-values/kuberay-cluster-values-train.yaml"
+  default     = "DUMMY_VALUE"
+  sensitive   = true
 }
 
-# NVIDIA Operator
-
-variable "nvidia_gpu_values_path" {
-  description = "Path for NVidia GPU operator Helm values file."
-  type        = string
-  default     = "helm-values/gpu-operator-values-ubuntu.yaml"
-}
-
-# Apache Airflow needs
-
-variable "airflow_name" {
-  description = "Apache AirFlow name."
-  type        = string
-  default     = "airflow"
-}
-
-variable "apache_airflow_values_path" {
-  description = "Path for Apache Airflow Helm values file."
-  type        = string
-  default     = "helm-values/airflow-values.yaml"
+variable "tags" {
+  type        = map(string)
+  description = "AWS tags that will be applied to all resources"
+  default     = {}
 }
