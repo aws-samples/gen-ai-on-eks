@@ -1,0 +1,126 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mistral
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/app-metrics: "true"
+    prometheus.io/port: "8080"
+  labels:
+    model: mistral7b
+spec:
+  ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    model: mistral7b
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mistral
+  labels:
+    model: mistral7b
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      model: mistral7b
+  template:
+    metadata:
+      labels:
+        model: mistral7b
+    spec:
+      nodeSelector:
+        instanceType: trn1.2xlarge
+        neuron.amazonaws.com/neuron-device: "true"
+      tolerations:
+        - effect: NoSchedule
+          key: aws.amazon.com/neuron
+          operator: Exists
+      initContainers:
+        - name: model-download
+          image: amazon/aws-cli
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e              
+              echo "Checking target directory..."
+              if [ ! -d "/tmp/models/mistral-7b-v0-2" ]; then
+                echo "Creating target directory..."
+                mkdir -p /tmp/models/mistral-7b-v0-2
+              
+                echo "Copying files..."
+                if [ -d "/models/mistral-7b-v0-2" ]; then
+                  cp -rv /models/mistral-7b-v0-2/* /tmp/models/mistral-7b-v0-2/
+                  echo "Copy completed. New directory structure:"
+                  rm -rf /tmp/models/mistral-7b-v0-2/compiled
+                else
+                  echo "Source directory /models/mistral-7b-v0-2 does not exist!"
+                  exit 1
+                fi
+              else
+                echo "Target directory already exists"
+              fi
+          volumeMounts:
+            - name: model-volume
+              mountPath: /models
+            - name: local-storage
+              mountPath: /tmp/models
+      containers:
+        - name: vllm
+          # v0.7.3
+          image: public.ecr.aws/e3e2e5u9/neuron/genai:v6
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args: [
+            "vllm serve /tmp/models/mistral-7b-v0-2 --tokenizer /tmp/models/mistral-7b-v0-2 --port 8080 --host 0.0.0.0 --device neuron --tensor-parallel-size 2 --max-num-seqs 4 --block-size 8 --use-v2-block-manager --max-model-len 2048 --dtype bfloat16"
+          ]
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: http
+          resources:
+            requests:
+              cpu: 5
+              memory: 26Gi
+              aws.amazon.com/neuron: 1
+            limits:
+              cpu: 5
+              memory: 26Gi
+              aws.amazon.com/neuron: 1
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: local-storage
+              mountPath: /tmp/models
+            - name: model-volume
+              mountPath: /models
+          env:
+            - name: NEURON_RT_NUM_CORES
+              value: "2"
+            - name: NEURON_RT_VISIBLE_CORES
+              value: "0,1"
+            - name: VLLM_LOGGING_LEVEL
+              value: "INFO"
+            - name: NEURON_ON_DEVICE_SAMPLING_DISABLED
+              value: "1"
+            - name: VLLM_NEURON_FRAMEWORK
+              value: "transformers-neuronx"
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+        - name: model-volume
+          persistentVolumeClaim:
+            claimName: fsx-models
+        - name: local-storage
+          hostPath:
+            path: /mnt/k8s-disks/0
+            type: Directory
