@@ -75,7 +75,7 @@ spec:
       containers:
         - name: vllm
           # v0.7.3
-          image: public.ecr.aws/e3e2e5u9/neuron/genai:v6
+          image: public.ecr.aws/aws-containers/aiml/ray-2.43.0-py311-vllm-neuron:latest
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args: [
