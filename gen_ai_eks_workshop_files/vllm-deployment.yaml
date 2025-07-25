@@ -49,7 +49,7 @@ spec:
           args:
             - '--port=8080'
             - '--model=/local-storage/models/mistral-7b-v0-3'
-            - '--tokenizer_mode=mistral'
+            - '--tokenizer_mode=auto'
             - '--tokenizer=/local-storage/models/mistral-7b-v0-3'
             - '--gpu_memory_utilization=0.90'
             - '--max-model-len=2048'
@@ -60,6 +60,8 @@ spec:
             - '--enforce-eager'
             - '--swap-space=16'
             - '--disable-custom-all-reduce'
+            - '--enable-auto-tool-choice'
+            - '--tool-call-parser=mistral'
           env:
             - name: CUDA_LAUNCH_BLOCKING
               value: "1"
