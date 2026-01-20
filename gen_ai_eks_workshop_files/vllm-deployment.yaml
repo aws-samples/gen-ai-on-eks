@@ -57,7 +57,6 @@ spec:
             - '--max-num-batched-tokens=8192'
             - '--max-num-seqs=256'
             - '--block-size=16'
-            - '--enforce-eager'
             - '--swap-space=16'
             - '--disable-custom-all-reduce'
           env:
